@@ -1352,7 +1352,7 @@ CRITICAL: Respond with ONLY a raw JSON object. No markdown, no backticks, no exp
       const orRes=await fetch('https://openrouter.ai/api/v1/chat/completions',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiKey,'HTTP-Referer':'https://signal-monitor-production-494f.up.railway.app','X-Title':'SignalMonitor India'},
-        body:JSON.stringify({model:'mistralai/mistral-7b-instruct:free',messages:[{role:'user',content:prompt}],max_tokens:600})
+        body:JSON.stringify({model:'meta-llama/llama-3.2-3b-instruct:free',messages:[{role:'user',content:prompt}],max_tokens:600})
       });
       const orData=await orRes.json();
       if(orData.error)throw new Error(orData.error.message);
