@@ -1,0 +1,15 @@
+{
+  "name": "signal-monitor",
+  "version": "1.0.0",
+  "description": "Indian Forex & Crypto Signal Monitor — 24/7 free",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
