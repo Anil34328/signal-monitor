@@ -1349,14 +1349,32 @@ CRITICAL: Respond with ONLY a raw JSON object. No markdown, no backticks, no exp
     // If key starts with sk-or- it's OpenRouter, otherwise try Gemini
     let aiText='';
     if(aiKey.startsWith('sk-or-')){
-      const orRes=await fetch('https://openrouter.ai/api/v1/chat/completions',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiKey,'HTTP-Referer':'https://signal-monitor-production-494f.up.railway.app','X-Title':'SignalMonitor India'},
-        body:JSON.stringify({model:'meta-llama/llama-3.2-3b-instruct:free',messages:[{role:'user',content:prompt}],max_tokens:600})
-      });
-      const orData=await orRes.json();
-      if(orData.error)throw new Error(orData.error.message);
-      aiText=orData.choices?.[0]?.message?.content||'';
+      const freeModels=[
+        'meta-llama/llama-3.2-3b-instruct:free',
+        'meta-llama/llama-3.1-8b-instruct:free',
+        'google/gemma-2-9b-it:free',
+        'mistralai/mistral-7b-instruct:free',
+        'qwen/qwen-2-7b-instruct:free'
+      ];
+      let orData=null;
+      for(const model of freeModels){
+        try{
+          const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+            method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiKey,'HTTP-Referer':'https://signal-monitor-production-494f.up.railway.app','X-Title':'SignalMonitor India'},
+            body:JSON.stringify({model,messages:[{role:'user',content:prompt}],max_tokens:600})
+          });
+          const data=await r.json();
+          if(!data.error&&data.choices?.[0]?.message?.content){
+            orData=data;
+            console.log('[AI] Working model:',model);
+            break;
+          }
+          console.warn('[AI]',model,'failed:',data.error?.message);
+        }catch(e){console.warn('[AI]',model,'error:',e.message);}
+      }
+      if(!orData)throw new Error('All free models unavailable. Try again in a minute.');
+      aiText=orData.choices[0].message.content;
     } else {
       // Try Gemini models
       const models=['gemini-1.5-flash','gemini-1.5-flash-latest','gemini-1.5-pro'];
