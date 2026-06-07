@@ -1280,7 +1280,7 @@ function isCacheValid(){
   const c=getAICache();
   if(!c)return false;
   const age=(Date.now()-c.ts)/1000/60; // minutes
-  return age<30; // cache valid for 30 mins
+  return age<60; // cache valid for 60 mins — saves Gemini quota
 }
 
 async function runAISuggest(){
@@ -1340,17 +1340,41 @@ CRITICAL: Respond with ONLY a raw JSON object. No markdown, no backticks, no exp
   }
 
   try{
-    const geminiRes=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        contents:[{parts:[{text:prompt}]}],
-        generationConfig:{temperature:0.3,maxOutputTokens:600}
-      })
-    });
-    const geminiData=await geminiRes.json();
-    if(geminiData.error){throw new Error(geminiData.error.message);}
-    const d={content:[{text:geminiData.candidates?.[0]?.content?.parts?.[0]?.text||''}]};
+    const aiKey=localStorage.getItem('anthropic_key')||'';
+    if(!aiKey){
+      // Use fallback suggestion from indicators only — no API needed
+      throw new Error('NO_KEY');
+    }
+    // Try OpenRouter first (free, works in India)
+    // If key starts with sk-or- it's OpenRouter, otherwise try Gemini
+    let aiText='';
+    if(aiKey.startsWith('sk-or-')){
+      const orRes=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiKey,'HTTP-Referer':'https://signal-monitor-production-494f.up.railway.app','X-Title':'SignalMonitor India'},
+        body:JSON.stringify({model:'mistralai/mistral-7b-instruct:free',messages:[{role:'user',content:prompt}],max_tokens:600})
+      });
+      const orData=await orRes.json();
+      if(orData.error)throw new Error(orData.error.message);
+      aiText=orData.choices?.[0]?.message?.content||'';
+    } else {
+      // Try Gemini models
+      const models=['gemini-1.5-flash','gemini-1.5-flash-latest','gemini-1.5-pro'];
+      let lastError='';
+      for(const model of models){
+        try{
+          const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${aiKey}`,{
+            method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.3,maxOutputTokens:600}})
+          });
+          const data=await r.json();
+          if(!data.error){aiText=data.candidates?.[0]?.content?.parts?.[0]?.text||'';break;}
+          lastError=data.error.message;
+        }catch(e){lastError=e.message;}
+      }
+      if(!aiText)throw new Error(lastError||'Gemini quota exceeded');
+    }
+    const d={content:[{text:aiText}]};
     const raw=d.content?d.content.map(b=>b.text||'').join(''):'';
     let sug;
     try{
@@ -1422,13 +1446,39 @@ CRITICAL: Respond with ONLY a raw JSON object. No markdown, no backticks, no exp
 
   }catch(err){
     console.error('AI error:',err);
+    // If no key or quota exceeded — use smart fallback from indicators
+    if(err.message==='NO_KEY'||err.message.includes('quota')||err.message.includes('exceeded')){
+      const best=Object.values(pairData).filter(p=>p.sig!=='WAIT').sort((a,b)=>b.fs-a.fs)[0]||Object.values(pairData)[0];
+      if(best){
+        const fallbackSug={
+          pair:best.pair.display, direction:best.sig==='WAIT'?(best.mh>0?'BUY':'SELL'):best.sig,
+          timeframe:'5 min', confidence:best.cp, score:best.fs,
+          riskLevel:best.riskScore<=30?'LOW':best.riskScore<=55?'MEDIUM':'HIGH',
+          reason:`Based on indicators: RSI ${best.rsi} (${best.rsi<30?'oversold-BUY':best.rsi>70?'overbought-SELL':'neutral'}), MACD ${best.mh>0?'positive':'negative'}, Stochastic ${best.sv}, Confluence ${best.cp}%. Score ${best.fs}/100.`,
+          avoid:[], avoidReason:'', bestWindow:curWin().s+'-'+curWin().e+' IST',
+          warning:'AI quota exceeded — using indicator-based suggestion only'
+        };
+        const now=new Date();const ut=now.getTime()+now.getTimezoneOffset()*60000;const ist=new Date(ut+IST*3600000);
+        const ds=ist.getFullYear()+'-'+(ist.getMonth()+1).toString().padStart(2,'0')+'-'+ist.getDate().toString().padStart(2,'0');
+        const ts=ist.getHours().toString().padStart(2,'0')+':'+ist.getMinutes().toString().padStart(2,'0');
+        const sugRecord={id:Date.now(),date:ds,time:ts,...fallbackSug,pairKey:best.pair.id,entryPrice:best.pr,entryPriceDisplay:best.pr.toFixed(best.pair.dec),result:'PENDING',jp:best.jp||false};
+        setAICache(sugRecord);
+        const hist=getAIHistory();hist.unshift(sugRecord);saveAIHistory(hist);
+        renderSuggestCard(sugRecord,false);
+        badge.textContent=`${fallbackSug.direction} ${fallbackSug.pair}`;
+        badge.style.color=fallbackSug.direction==='BUY'?'var(--green)':'var(--red)';
+        showToast('⚠️ Using indicator-based suggestion (no AI quota). Get free key at openrouter.ai','t-ok');
+        return;
+      }
+    }
     box.innerHTML=`<div style="color:var(--red);padding:16px">
       <div style="font-weight:600;margin-bottom:8px">❌ AI Error: ${err.message}</div>
       <div style="font-size:11px;color:var(--muted);line-height:1.8">
-        <div>1. Make sure server is running: <strong style="color:var(--text)">node server.js</strong></div>
-        <div>2. Check Command Prompt for error messages</div>
-        <div>3. Make sure API key is in server.js line 5</div>
-        <div>4. Try opening: <a href="/api/claude" style="color:var(--blue)" target="_blank">/api/claude</a></div>
+        <strong style="color:var(--gold)">Get free AI key (works in India, no quota issues):</strong><br>
+        1. Go to <a href="https://openrouter.ai" target="_blank" style="color:var(--blue)">openrouter.ai</a> → Sign up free<br>
+        2. Click Keys → Create Key → copy it (starts with sk-or-...)<br>
+        3. Paste in ⚙️ Settings → Gemini API Key field → Save<br>
+        Free credits given on signup — no quota limits like Gemini!
       </div>
     </div>`;
     badge.textContent='Error';badge.style.color='var(--red)';
@@ -1799,7 +1849,18 @@ window.addEventListener('DOMContentLoaded',()=>{
   try{
     setInterval(updateClock,1000);
     setInterval(()=>{try{updateSessionUI();buildISTWins();buildNews();buildRanked();}catch(e){}},60000);
-    setInterval(()=>{try{runAll();}catch(e){}},5*60*1000);
+    // Auto-refresh prices only — NEVER calls AI automatically to save Gemini quota
+    setInterval(()=>{
+      try{
+        PAIRS.forEach(pair=>{
+          getCandles(pair).then(({c,src})=>{
+            const r=renderCard(pair,c,src);
+            if(r)pairData[pair.id]={...r,pair};
+          }).catch(()=>{});
+        });
+        setTimeout(()=>{updateTopMetrics();buildRanked();buildPairDropdown();},3000);
+      }catch(e){}
+    },5*60*1000);
     updateClock();
     runAll();
     resolvePendingSuggestions();
