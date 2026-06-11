@@ -1004,30 +1004,22 @@ function triggerHCAlert(pairDisplay, sig, conf, score, price){
 }
 
 async function sendHCEmail(pair, sig, conf, score, price){
-  if(!ejsSid||!ejsTid||!ejsPub){
-    // Show setup reminder
-    showToast('⚠️ Set up EmailJS to get alerts on your phone!','t-err');
-    return;
-  }
   const ist=fmtI(utcNow());
   const dir=sig==='BUY'?'📈 BUY (HIGHER)':'📉 SELL (LOWER)';
+  const message=`🚨 HIGH CONFIDENCE SIGNAL!\n\nPair: ${pair}\nDirection: ${dir}\nConfidence: ${conf}%\nScore: ${score}/100\nPrice: ${price}\nTime: ${ist} IST\nExpiry: 5 minutes\n\nEnter on the NEXT candle open.\n\n⚠️ Always trade responsibly. Never risk more than 2-5% per trade.`;
   try{
-    await emailjs.send(ejsSid,ejsTid,{
-      to_email:emailAddr,
-      to_name:'Trader',
-      pair,
-      signal:dir,
-      score,
-      confidence:conf+'%',
-      price,
-      ist_time:ist+' IST',
-      expiry:'5 minutes',
-      message:`🚨 HIGH CONFIDENCE SIGNAL ALERT!\n\nPair: ${pair}\nDirection: ${dir}\nConfidence: ${conf}%\nScore: ${score}/100\nPrice: ${price}\nTime: ${ist} IST\nExpiry: 5 minutes\n\nEnter on the NEXT candle open. This signal has ${conf}% indicator confluence — one of the strongest signals detected.\n\n⚠️ Always trade responsibly. Never risk more than 2-5% per trade.`
-    });
-    console.log('[Email] Alert sent for',pair,sig);
-  }catch(e){
-    console.error('[Email] Failed:',e);
-  }
+    // Try server-side email first (uses Railway env vars — always works)
+    const r=await fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({pair,signal:dir,confidence:conf,score,istTime:ist+' IST',message})});
+    const d=await r.json();
+    if(d.ok){console.log('[Email] Sent via server ✅');return;}
+  }catch(e){console.warn('[Email] Server failed, trying EmailJS directly');}
+  // Fallback: try EmailJS directly from browser
+  if(!ejsSid||!ejsTid||!ejsPub){console.warn('[Email] EmailJS not configured');return;}
+  try{
+    await emailjs.send(ejsSid,ejsTid,{to_email:emailAddr,to_name:'Trader',pair,signal:dir,score,confidence:conf+'%',price,ist_time:ist+' IST',expiry:'5 minutes',message});
+    console.log('[Email] Sent via EmailJS ✅');
+  }catch(e){console.error('[Email] Failed:',e);}
 }
 function squal(u){const ac=SESS.filter(s=>inS(u,s));return{ac,cnt:ac.length,vol:ac.reduce((a,s)=>a+s.v,0)};}
 function newsR(u,w=1){return NEWS.filter(e=>{const d=((e.u-u)+24)%24;return d>=0&&d<w;});}
@@ -1325,75 +1317,63 @@ CRITICAL: Respond with ONLY a raw JSON object. No markdown, no backticks, no exp
 
 {"pair":"EUR/USD","direction":"BUY","timeframe":"5 min","confidence":78,"entry":"NOW on next candle open","expiry":"5 minutes","score":82,"riskLevel":"LOW","reason":"2-3 sentence explanation using indicator data","avoid":["GBP/USD"],"avoidReason":"Brief reason why these are risky now","bestWindow":"17:30-21:30 IST","warning":"One key risk to watch"}`;
 
-  const geminiKey=localStorage.getItem('anthropic_key')||'';
-  if(!geminiKey){
-    box.innerHTML=`<div style="padding:20px">
-      <div style="font-size:13px;font-weight:600;color:var(--gold);margin-bottom:10px">🔑 Enter your Gemini API key to enable AI suggestions</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Get free key at <a href="https://aistudio.google.com" target="_blank" style="color:var(--blue)">aistudio.google.com</a> → Get API Key → free, no credit card<br>🔒 Saved only in your browser — never shared anywhere</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <input id="anthropic-key-input" type="password" placeholder="Paste Gemini API key here..." style="flex:1;min-width:200px;background:var(--bg3);border:1px solid var(--gold);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:9px 12px;border-radius:6px;outline:none">
-        <button class="btn primary" onclick="saveAnthropicKey()" style="font-size:12px">💾 Save & Get Suggestion</button>
-      </div>
-    </div>`;
-    badge.textContent='Need API key';badge.style.color='var(--amber)';
-    return;
-  }
+  // Load config from server first
+  let serverConfig={};
+  try{const cr=await fetch('/api/config');serverConfig=await cr.json();}catch(e){}
+
+  const aiKey=localStorage.getItem('anthropic_key')||serverConfig.geminiKey||'';
 
   try{
-    const aiKey=localStorage.getItem('anthropic_key')||'';
-    if(!aiKey){
-      // Use fallback suggestion from indicators only — no API needed
-      throw new Error('NO_KEY');
-    }
-    // Try OpenRouter first (free, works in India)
-    // If key starts with sk-or- it's OpenRouter, otherwise try Gemini
     let aiText='';
-    if(aiKey.startsWith('sk-or-')){
-      const freeModels=[
-        'meta-llama/llama-3.2-3b-instruct:free',
-        'meta-llama/llama-3.1-8b-instruct:free',
-        'google/gemma-2-9b-it:free',
-        'mistralai/mistral-7b-instruct:free',
-        'qwen/qwen-2-7b-instruct:free'
-      ];
-      let orData=null;
-      for(const model of freeModels){
-        try{
-          const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{
-            method:'POST',
-            headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiKey,'HTTP-Referer':'https://signal-monitor-production-494f.up.railway.app','X-Title':'SignalMonitor India'},
-            body:JSON.stringify({model,messages:[{role:'user',content:prompt}],max_tokens:600})
-          });
-          const data=await r.json();
-          if(!data.error&&data.choices?.[0]?.message?.content){
-            orData=data;
-            console.log('[AI] Working model:',model);
-            break;
-          }
-          console.warn('[AI]',model,'failed:',data.error?.message);
-        }catch(e){console.warn('[AI]',model,'error:',e.message);}
+
+    // Try server-side AI proxy first (uses Railway env vars — most reliable)
+    try{
+      const sr=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
+      if(sr.ok){const sd=await sr.json();if(sd.text){aiText=sd.text;console.log('[AI] Server proxy ✅');}}
+    }catch(e){console.warn('[AI] Server proxy failed, trying client-side');}
+
+    // If server proxy failed, try client-side with user's key
+    if(!aiText&&aiKey){
+      if(aiKey.startsWith('sk-or-')){
+        // OpenRouter
+        const models=['meta-llama/llama-3.2-3b-instruct:free','meta-llama/llama-3.1-8b-instruct:free','google/gemma-2-9b-it:free','qwen/qwen-2-7b-instruct:free'];
+        for(const model of models){
+          try{
+            const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiKey,'HTTP-Referer':'https://signal-monitor-production-494f.up.railway.app','X-Title':'SignalMonitor'},body:JSON.stringify({model,messages:[{role:'user',content:prompt}],max_tokens:600})});
+            const data=await r.json();
+            if(!data.error&&data.choices?.[0]?.message?.content){aiText=data.choices[0].message.content;console.log('[AI] OpenRouter model:',model);break;}
+          }catch(e){}
+        }
+      } else {
+        // Gemini
+        const models=['gemini-1.5-flash','gemini-1.5-pro','gemini-pro'];
+        for(const model of models){
+          try{
+            const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${aiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.3,maxOutputTokens:600}})});
+            const data=await r.json();
+            if(!data.error){aiText=data.candidates?.[0]?.content?.parts?.[0]?.text||'';if(aiText){console.log('[AI] Gemini model:',model);break;}}
+          }catch(e){}
+        }
       }
-      if(!orData)throw new Error('All free models unavailable. Try again in a minute.');
-      aiText=orData.choices[0].message.content;
-    } else {
-      // Try Gemini models
-      const models=['gemini-1.5-flash','gemini-1.5-flash-latest','gemini-1.5-pro'];
-      let lastError='';
-      for(const model of models){
-        try{
-          const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${aiKey}`,{
-            method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.3,maxOutputTokens:600}})
-          });
-          const data=await r.json();
-          if(!data.error){aiText=data.candidates?.[0]?.content?.parts?.[0]?.text||'';break;}
-          lastError=data.error.message;
-        }catch(e){lastError=e.message;}
-      }
-      if(!aiText)throw new Error(lastError||'Gemini quota exceeded');
     }
-    const d={content:[{text:aiText}]};
-    const raw=d.content?d.content.map(b=>b.text||'').join(''):'';
+
+    // If all APIs fail — use smart indicator-based fallback (always works, no API needed)
+    if(!aiText){
+      console.warn('[AI] All APIs failed — using indicator fallback');
+      const best=ranked[0];
+      const dir=best.sig==='WAIT'?(best.mh>0?'BUY':'SELL'):best.sig;
+      aiText=JSON.stringify({
+        pair:best.pair.display, direction:dir, timeframe:'5 min',
+        confidence:best.cp, score:best.fs,
+        riskLevel:best.riskScore<=30?'LOW':best.riskScore<=55?'MEDIUM':'HIGH',
+        reason:`RSI at ${best.rsi} (${best.rsi<35?'oversold — buyers entering':best.rsi>65?'overbought — sellers entering':'neutral zone'}). MACD histogram ${best.mh>0?'positive — upward momentum':'negative — downward momentum'}. Stochastic at ${best.sv} (${best.sv<25?'oversold':'overbought'}). Confluence ${best.cp}% — ${best.cp>=60?'strong':'moderate'} signal alignment.`,
+        avoid:ranked.slice(-2).map(p=>p.pair.display),
+        avoidReason:'Lower confluence and higher risk scores',
+        bestWindow:cw.s+'-'+cw.e+' IST',
+        warning:best.riskScore>50?'Medium risk — use smaller trade size':'Low risk window — normal size ok'
+      });
+    }
+    const raw=aiText.trim();
     let sug;
     try{
       // Try multiple parsing strategies
