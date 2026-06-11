@@ -1006,7 +1006,7 @@ function triggerHCAlert(pairDisplay, sig, conf, score, price){
 async function sendHCEmail(pair, sig, conf, score, price){
   const ist=fmtI(utcNow());
   const dir=sig==='BUY'?'📈 BUY (HIGHER)':'📉 SELL (LOWER)';
-  const message=`🚨 HIGH CONFIDENCE SIGNAL!\n\nPair: ${pair}\nDirection: ${dir}\nConfidence: ${conf}%\nScore: ${score}/100\nPrice: ${price}\nTime: ${ist} IST\nExpiry: 5 minutes\n\nEnter on the NEXT candle open.\n\n⚠️ Always trade responsibly. Never risk more than 2-5% per trade.`;
+  const message=`🚨 HIGH CONFIDENCE SIGNAL!\n\nPair: ${pair}\nDirection: ${dir}\nConfidence: ${conf}%\nScore: ${score}/100\nCurrent Price: ${price}\nTime: ${ist} IST\n\n📍 ENTRY INSTRUCTIONS:\n✅ Enter when price is: ${sug?.entryZone||price}\n❌ Skip if price is: ${sug?.avoidIfPrice||'already moved too far'}\n\n📊 KEY LEVELS:\n${sug?.keyLevels||'Check app for details'}\n\n⏰ WHEN TO TAKE:\n${sug?.whenToTake||'Enter on next candle open'}\n\n💡 WHY:\n${sug?.reason||''}\n\n⚠️ WARNING: ${sug?.warning||'Always trade responsibly'}\n\nExpiry: 5 minutes\nNever risk more than 2-5% per trade.`;
   try{
     // Try server-side email first (uses Railway env vars — always works)
     const r=await fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -1311,11 +1311,31 @@ Context: ${ctx}
 Pair data (sorted lowest→highest risk):
 ${pairSummary}
 
-Your job: Pick the SINGLE BEST trade signal right now.
+Your job: Pick the SINGLE BEST trade signal with EXACT price levels.
 
-CRITICAL: Respond with ONLY a raw JSON object. No markdown, no backticks, no explanation, no text before or after. Start your response with { and end with }.
+CRITICAL: Respond with ONLY a raw JSON object. No markdown, no backticks, no text before or after. Start with { and end with }.
 
-{"pair":"EUR/USD","direction":"BUY","timeframe":"5 min","confidence":78,"entry":"NOW on next candle open","expiry":"5 minutes","score":82,"riskLevel":"LOW","reason":"2-3 sentence explanation using indicator data","avoid":["GBP/USD"],"avoidReason":"Brief reason why these are risky now","bestWindow":"17:30-21:30 IST","warning":"One key risk to watch"}`;
+{
+"pair":"EUR/USD",
+"direction":"BUY",
+"currentPrice":"1.08750",
+"entryZone":"1.08720 to 1.08750",
+"entryExplanation":"Price is near the lower Bollinger Band support at 1.08720. Buy when price touches this zone.",
+"avoidIfPrice":"above 1.08820",
+"avoidExplanation":"If price rises above 1.08820 before your entry, the move is already done — skip this trade.",
+"targetMove":"1.08820 to 1.08850",
+"timeframe":"5 min",
+"confidence":78,
+"score":82,
+"riskLevel":"LOW",
+"reason":"RSI at 28 — oversold. MACD turning positive. Price touching lower Bollinger Band. Three indicators confirm BUY.",
+"whenToTake":"Wait for price to come down and touch 1.08720–1.08750, then enter BUY on the NEXT candle open.",
+"keyLevels":"Support: 1.08700 | Entry zone: 1.08720-1.08750 | Current: 1.08750 | Target: 1.08850 | Resistance: 1.08900",
+"avoid":["GBP/USD"],
+"avoidReason":"RSI neutral, no clear direction",
+"bestWindow":"17:30-21:30 IST",
+"warning":"If price breaks below 1.08680 — signal cancelled, do not enter"
+}`;
 
   // Load config from server first
   let serverConfig={};
@@ -1499,44 +1519,76 @@ function renderSuggestCard(sug, isLive){
   }else if(sug.result==='WIN'){
     statusHtml=`<div class="suggest-status status-win">✅ WIN — Price moved in the ${sug.direction} direction after 5 min · Entry: ${sug.entryPriceDisplay}</div>`;
   }else if(sug.result==='LOSS'){
-    statusHtml=`<div class="suggest-status status-loss">❌ LOSS — Price moved against the ${sug.direction} signal after 5 min · Entry: ${sug.entryPriceDisplay}</div>`;
+    statusHtml=`<div class="suggest-status status-loss">❌ LOSS — Price moved against the ${sug.direction} signal · Entry: ${sug.entryPriceDisplay}</div>`;
   }else if(sug.result==='PENDING'){
     statusHtml=`<div class="suggest-status status-checking">🔄 Result pending — will resolve on next Analyze</div>`;
   }
 
   box.innerHTML=`
     <div class="suggest-card">
-      ${sug.jp?'<div class="jackpot-banner"><span style="font-size:18px">🎯</span><div><div class="jb-text">JACKPOT SHOT</div><div class="jb-sub">All indicators aligned · Prime window · No news risk</div></div></div>':''}
+      ${sug.jp?'<div class="jackpot-banner"><span style="font-size:18px">🎯</span><div><div class="jb-text">JACKPOT SHOT</div><div class="jb-sub">All indicators aligned · Prime window</div></div></div>':''}
+
+      <!-- Header -->
       <div class="suggest-pair-row">
         <div>
           <div class="suggest-pair-name" style="color:${dirColor}">${sug.pair}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px">Entry: ${sug.entryPriceDisplay} · ${sug.time} IST</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${sug.time} IST · Current price: <strong style="color:var(--text)">${sug.currentPrice||sug.entryPriceDisplay}</strong></div>
         </div>
         <div class="suggest-dir ${dirClass}">${sug.direction==='BUY'?'▲ BUY':'▼ SELL'}</div>
       </div>
+
+      <!-- Key metrics -->
       <div class="suggest-meta">
         <div class="smeta-item"><div class="smeta-val" style="color:var(--gold)">${sug.score}/100</div><div class="smeta-lbl">Signal Score</div></div>
         <div class="smeta-item"><div class="smeta-val" style="color:var(--blue)">${sug.confidence}%</div><div class="smeta-lbl">Confidence</div></div>
         <div class="smeta-item"><div class="smeta-val" style="color:${riskCol}">${sug.riskLevel}</div><div class="smeta-lbl">Risk Level</div></div>
-        <div class="smeta-item"><div class="smeta-val" style="color:var(--purple)">${sug.timeframe}</div><div class="smeta-lbl">Timeframe</div></div>
+        <div class="smeta-item"><div class="smeta-val" style="color:var(--purple)">${sug.timeframe||'5 min'}</div><div class="smeta-lbl">Timeframe</div></div>
       </div>
+
+      <!-- EXACT PRICE LEVELS — most important section -->
+      <div style="background:var(--bg3);border:2px solid ${dirColor}33;border-radius:10px;padding:14px 16px;margin-bottom:12px">
+        <div style="font-size:11px;color:var(--gold);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">📍 Exact Entry Instructions</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div style="background:var(--bg2);border-radius:7px;padding:10px 12px">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">✅ Enter Trade When Price Is</div>
+            <div style="font-size:15px;font-weight:700;color:${dirColor};font-family:var(--font-head)">${sug.entryZone||sug.entryPriceDisplay}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5">${sug.entryExplanation||'Enter on next candle open'}</div>
+          </div>
+          <div style="background:var(--bg2);border-radius:7px;padding:10px 12px">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">❌ Skip Trade If Price Is</div>
+            <div style="font-size:15px;font-weight:700;color:var(--red);font-family:var(--font-head)">${sug.avoidIfPrice||'—'}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5">${sug.avoidExplanation||'Signal no longer valid'}</div>
+          </div>
+        </div>
+        <div style="background:var(--bg2);border-radius:7px;padding:10px 12px;margin-bottom:8px">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">📊 Key Price Levels</div>
+          <div style="font-size:12px;color:var(--text);font-family:var(--font-mono);line-height:1.9">${(sug.keyLevels||'').replace(/\|/g,'<span style="color:var(--border2)"> │ </span>')}</div>
+        </div>
+        <div style="background:#fbbf2410;border:1px solid #fbbf2430;border-radius:7px;padding:10px 12px">
+          <div style="font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">⏰ When To Take This Trade</div>
+          <div style="font-size:12px;color:var(--text);line-height:1.6">${sug.whenToTake||'Enter on next candle open at market price'}</div>
+        </div>
+      </div>
+
+      <!-- Why this signal -->
       <div class="suggest-reason"><strong style="color:var(--text)">Why:</strong> ${sug.reason}</div>
+
+      <!-- Avoid & Best window -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
         <div style="background:var(--bg3);border-radius:6px;padding:8px 10px;font-size:11px">
-          <div style="color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;font-size:10px">Avoid now</div>
+          <div style="color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;font-size:10px">Avoid these pairs now</div>
           <div style="color:var(--red)">${avoid}</div>
-          <div style="color:var(--muted);font-size:10px;margin-top:3px">${sug.avoidReason}</div>
+          <div style="color:var(--muted);font-size:10px;margin-top:3px">${sug.avoidReason||''}</div>
         </div>
         <div style="background:var(--bg3);border-radius:6px;padding:8px 10px;font-size:11px">
           <div style="color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;font-size:10px">Best window today</div>
-          <div style="color:var(--green)">${sug.bestWindow}</div>
-          <div style="color:var(--muted);font-size:10px;margin-top:3px">⚠️ ${sug.warning}</div>
+          <div style="color:var(--green)">${sug.bestWindow||''}</div>
+          <div style="color:var(--amber);font-size:10px;margin-top:3px">⚠️ ${sug.warning||''}</div>
         </div>
       </div>
       ${statusHtml}
     </div>`;
 
-  // Start countdown if live
   if(isLive&&sug.result==='PENDING') startCountdown(300);
 }
 
