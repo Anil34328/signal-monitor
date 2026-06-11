@@ -1262,245 +1262,246 @@ function buildNews(){
 function getAIHistory(){try{return JSON.parse(localStorage.getItem('ai_sug_v1')||'[]');}catch{return[];}}
 function saveAIHistory(a){localStorage.setItem('ai_sug_v1',JSON.stringify(a));}
 
-let pendingCheck=null; // {id, pairId, sig, entryPrice, entryTime, checkAt}
+// ── PROFESSIONAL SIGNAL ENGINE — no AI API needed ────────────────────────────
+// Calculates exact entry prices using support/resistance from Bollinger Bands + ATR
+function calcProfessionalSignal(pd){
+  const {pair,pr,rsi:rv,mh,bb,sv,cf,cp,fs,sig,ap,src,jp}=pd;
+  const atrPips=parseFloat(ap);
+  const atrPrice=atrPips/pair.pm;
 
-// ── SMART AI CACHE — saves Gemini quota ──────────────────────────────────────
-// Only calls Gemini if: no cache, or cache is 30+ mins old, or confidence changed a lot
-function getAICache(){try{return JSON.parse(localStorage.getItem('ai_cache')||'null');}catch{return null;}}
-function setAICache(sug){localStorage.setItem('ai_cache',JSON.stringify({sug,ts:Date.now()}));}
-function isCacheValid(){
-  const c=getAICache();
-  if(!c)return false;
-  const age=(Date.now()-c.ts)/1000/60; // minutes
-  return age<60; // cache valid for 60 mins — saves Gemini quota
+  // Support and resistance levels from Bollinger Bands
+  const bbMid=(bb.up+bb.lo)/2;
+  const bbRange=bb.up-bb.lo;
+
+  // Calculate exact entry, avoid, and target prices
+  let entryPrice, avoidPrice, targetPrice, entryExplanation, avoidExplanation, whenToTake, keyLevels;
+
+  if(sig==='BUY'){
+    // Entry: slightly above lower BB (confirmation of bounce)
+    entryPrice=bb.lo+(bbRange*0.05);
+    // Avoid: if price already moved up past midpoint
+    avoidPrice=bbMid;
+    // Target: middle BB
+    targetPrice=bbMid;
+    entryExplanation=`Price is near the Lower Bollinger Band support (${bb.lo.toFixed(pair.dec)}). Wait for price to touch ${entryPrice.toFixed(pair.dec)} — this is where buyers typically step in strongly.`;
+    avoidExplanation=`If price is already above ${avoidPrice.toFixed(pair.dec)} when you check, the move has started — skip this trade, you missed the entry.`;
+    whenToTake=`Watch the chart. When price DROPS to ${entryPrice.toFixed(pair.dec)} or lower, wait for ONE green candle to form, then enter BUY on the NEXT candle open. Expiry: 5 minutes.`;
+    keyLevels=`Strong Support: ${bb.lo.toFixed(pair.dec)} | ✅ Entry Zone: ${entryPrice.toFixed(pair.dec)}–${(entryPrice+atrPrice*0.3).toFixed(pair.dec)} | Current: ${pr.toFixed(pair.dec)} | Target: ${targetPrice.toFixed(pair.dec)} | ❌ Skip if above: ${avoidPrice.toFixed(pair.dec)}`;
+  } else if(sig==='SELL'){
+    // Entry: slightly below upper BB
+    entryPrice=bb.up-(bbRange*0.05);
+    // Avoid: if price already dropped past midpoint
+    avoidPrice=bbMid;
+    // Target: middle BB
+    targetPrice=bbMid;
+    entryExplanation=`Price is near the Upper Bollinger Band resistance (${bb.up.toFixed(pair.dec)}). Wait for price to touch ${entryPrice.toFixed(pair.dec)} — this is where sellers push price back down strongly.`;
+    avoidExplanation=`If price is already below ${avoidPrice.toFixed(pair.dec)} when you check, the move has started — skip this trade, entry was already missed.`;
+    whenToTake=`Watch the chart. When price RISES to ${entryPrice.toFixed(pair.dec)} or higher, wait for ONE red candle to form, then enter SELL on the NEXT candle open. Expiry: 5 minutes.`;
+    keyLevels=`❌ Skip if below: ${avoidPrice.toFixed(pair.dec)} | Current: ${pr.toFixed(pair.dec)} | ✅ Entry Zone: ${(entryPrice-atrPrice*0.3).toFixed(pair.dec)}–${entryPrice.toFixed(pair.dec)} | Resistance: ${bb.up.toFixed(pair.dec)} | Target: ${targetPrice.toFixed(pair.dec)}`;
+  } else {
+    return null; // WAIT — no signal
+  }
+
+  // Professional confluence score — count how many indicators agree
+  let score=0, reasons=[], warnings=[];
+
+  // RSI
+  if(sig==='BUY'&&rv<=35){score+=25;reasons.push(`RSI ${rv} — oversold (below 35), buyers expected to enter`);}
+  else if(sig==='BUY'&&rv<=45){score+=15;reasons.push(`RSI ${rv} — approaching oversold zone`);}
+  else if(sig==='SELL'&&rv>=65){score+=25;reasons.push(`RSI ${rv} — overbought (above 65), sellers expected to enter`);}
+  else if(sig==='SELL'&&rv>=55){score+=15;reasons.push(`RSI ${rv} — approaching overbought zone`);}
+  else{score+=5;warnings.push(`RSI ${rv} in neutral zone — weaker signal`);}
+
+  // MACD
+  if(sig==='BUY'&&mh>0){score+=25;reasons.push(`MACD histogram positive (+${Math.abs(mh).toFixed(5)}) — upward momentum confirmed`);}
+  else if(sig==='SELL'&&mh<0){score+=25;reasons.push(`MACD histogram negative (${mh.toFixed(5)}) — downward momentum confirmed`);}
+  else{score+=5;warnings.push('MACD conflicts with signal direction');}
+
+  // Bollinger Bands
+  const bbPos=(pr-bb.lo)/bbRange;
+  if(sig==='BUY'&&bbPos<=0.25){score+=20;reasons.push(`Price at ${(bbPos*100).toFixed(0)}% of BB range — near lower band support, bounce expected`);}
+  else if(sig==='SELL'&&bbPos>=0.75){score+=20;reasons.push(`Price at ${(bbPos*100).toFixed(0)}% of BB range — near upper band resistance, reversal expected`);}
+  else{score+=8;warnings.push('Price not at extreme Bollinger Band position');}
+
+  // Stochastic
+  if(sig==='BUY'&&sv<=25){score+=20;reasons.push(`Stochastic ${sv} — deeply oversold, reversal zone`);}
+  else if(sig==='BUY'&&sv<=35){score+=12;reasons.push(`Stochastic ${sv} — oversold territory`);}
+  else if(sig==='SELL'&&sv>=75){score+=20;reasons.push(`Stochastic ${sv} — deeply overbought, reversal zone`);}
+  else if(sig==='SELL'&&sv>=65){score+=12;reasons.push(`Stochastic ${sv} — overbought territory`);}
+  else{score+=5;warnings.push(`Stochastic ${sv} — neutral zone`);}
+
+  // ATR volatility check
+  const atrNorm=pair.cat==='gold'?atrPips/30:pair.cat==='crypto'?atrPips/500:atrPips/10;
+  if(atrNorm>=0.3&&atrNorm<=1.5){score+=10;reasons.push(`ATR ${ap}p — healthy volatility, good for 5-min binary`);}
+  else if(atrNorm<0.3){score-=10;warnings.push(`ATR ${ap}p — very low volatility, price may not move enough`);}
+  else{score-=5;warnings.push(`ATR ${ap}p — high volatility, wider price swings`);}
+
+  // Session quality
+  const u=utcNow();const ss=wScore(u);
+  if(ss>=65){score+=10;reasons.push('Prime trading session — London/NY overlap, high liquidity');}
+  else if(ss>=45){score+=5;reasons.push('Good trading session');}
+  else{score-=10;warnings.push('Poor trading session — low liquidity, signals less reliable');}
+
+  // News risk
+  const hn=newsR(u,1).filter(n=>n.i==='H').length;
+  if(hn>0){score-=20;warnings.push(`⚠️ ${hn} HIGH impact news event within 1 hour — very risky, price can spike unpredictably`);}
+
+  // Jackpot bonus
+  if(jp){score+=10;reasons.push('All indicators perfectly aligned — rare jackpot setup');}
+
+  score=Math.min(100,Math.max(0,score));
+
+  return {
+    pair:pair.display, pairId:pair.id, direction:sig,
+    currentPrice:pr.toFixed(pair.dec),
+    entryZone:`${entryPrice.toFixed(pair.dec)}`,
+    entryExplanation, avoidIfPrice:avoidPrice.toFixed(pair.dec),
+    avoidExplanation, targetPrice:targetPrice.toFixed(pair.dec),
+    whenToTake, keyLevels, timeframe:'5 min',
+    confidence:score, score:fs, riskLevel:score>=85?'LOW':score>=70?'MEDIUM':'HIGH',
+    reason:reasons.join('. ')+'.', warnings,
+    warning:warnings.length?warnings[0]:'All checks passed — clean signal',
+    bestWindow:curWin().s+'-'+curWin().e+' IST',
+    avoid:[], avoidReason:'', jp, src
+  };
 }
 
 async function runAISuggest(){
   const entries=Object.values(pairData);
-  if(!entries.length){showToast('Run Analyze first','t-err');return;}
+  if(!entries.length){showToast('Click Analyze All first','t-err');return;}
 
   const box=document.getElementById('ai-suggest-body');
   const badge=document.getElementById('ai-suggest-badge');
 
-  // Check cache first — saves Gemini quota
-  if(isCacheValid()){
-    const cached=getAICache();
-    const ageMin=Math.round((Date.now()-cached.ts)/1000/60);
-    box.innerHTML='';
-    renderSuggestCard(cached.sug,false);
-    badge.textContent=`${cached.sug.direction} ${cached.sug.pair}`;
-    badge.style.color=cached.sug.direction==='BUY'?'var(--green)':'var(--red)';
-    showToast(`📋 Using cached suggestion (${ageMin} min old) — refreshes every 30 min to save quota`,'t-ok');
-    return;
+  box.innerHTML='<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">🔍 Scanning all 9 pairs for 85%+ confidence signals...</div>';
+  badge.textContent='Scanning...';badge.style.color='var(--amber)';
+
+  // Analyze ALL pairs professionally
+  const allSignals=[];
+  for(const pd of Object.values(pairData)){
+    const sig=calcProfessionalSignal(pd);
+    if(sig)allSignals.push(sig);
   }
-  box.innerHTML='<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;font-style:italic">🤖 AI is analysing all pairs, risk scores, session & news context...</div>';
-  badge.textContent='Analysing…';badge.style.color='var(--amber)';
 
-  const u=utcNow();const{ac}=squal(u);const cw=curWin();
-  const hn=newsR(u,2).filter(n=>n.i==='H');
+  // Filter only 85%+ confidence
+  const strongSignals=allSignals.filter(s=>s.confidence>=85).sort((a,b)=>b.confidence-a.confidence);
+  const goodSignals=allSignals.filter(s=>s.confidence>=70&&s.confidence<85).sort((a,b)=>b.confidence-a.confidence);
+  const weakSignals=allSignals.filter(s=>s.confidence<70).sort((a,b)=>b.confidence-a.confidence);
 
-  // Build rich context with risk scores
-  const ranked=entries.map(pd=>({...pd,riskScore:calcRisk(pd)})).sort((a,b)=>a.riskScore-b.riskScore);
-  const ctx=`IST: ${fmtI(u)}. Window: ${cw.s}-${cw.e} (${cw.q}). Sessions: ${ac.map(s=>s.name).join(',')||'none'}. High-impact news next 2h: ${hn.length?hn.map(n=>n.n).join(','):'none'}. Indian trader on Olymp Trade/Pocket Option/Quotex, 5-min binary, INR.`;
-  const pairSummary=ranked.map(pd=>`${pd.pair.display}: signal=${pd.sig}, score=${pd.fs}/100, conf=${pd.cp}%, RSI=${pd.rsi}, MACD=${pd.mh>0?'+':'-'}, stoch=${pd.sv}, ATR=${pd.ap}p, riskScore=${pd.riskScore}/100, jackpot=${pd.jp}`).join('\n');
+  // Build the full market scan display
+  let html='';
 
-  const prompt=`You are an expert binary options signal analyst for an Indian trader.
-
-Context: ${ctx}
-
-Pair data (sorted lowest→highest risk):
-${pairSummary}
-
-Your job: Pick the SINGLE BEST trade signal with EXACT price levels.
-
-CRITICAL: Respond with ONLY a raw JSON object. No markdown, no backticks, no text before or after. Start with { and end with }.
-
-{
-"pair":"EUR/USD",
-"direction":"BUY",
-"currentPrice":"1.08750",
-"entryZone":"1.08720 to 1.08750",
-"entryExplanation":"Price is near the lower Bollinger Band support at 1.08720. Buy when price touches this zone.",
-"avoidIfPrice":"above 1.08820",
-"avoidExplanation":"If price rises above 1.08820 before your entry, the move is already done — skip this trade.",
-"targetMove":"1.08820 to 1.08850",
-"timeframe":"5 min",
-"confidence":78,
-"score":82,
-"riskLevel":"LOW",
-"reason":"RSI at 28 — oversold. MACD turning positive. Price touching lower Bollinger Band. Three indicators confirm BUY.",
-"whenToTake":"Wait for price to come down and touch 1.08720–1.08750, then enter BUY on the NEXT candle open.",
-"keyLevels":"Support: 1.08700 | Entry zone: 1.08720-1.08750 | Current: 1.08750 | Target: 1.08850 | Resistance: 1.08900",
-"avoid":["GBP/USD"],
-"avoidReason":"RSI neutral, no clear direction",
-"bestWindow":"17:30-21:30 IST",
-"warning":"If price breaks below 1.08680 — signal cancelled, do not enter"
-}`;
-
-  // Load config from server first
-  let serverConfig={};
-  try{const cr=await fetch('/api/config');serverConfig=await cr.json();}catch(e){}
-
-  const aiKey=localStorage.getItem('anthropic_key')||serverConfig.geminiKey||'';
-
-  try{
-    let aiText='';
-
-    // Try server-side AI proxy first (uses Railway env vars — most reliable)
-    try{
-      const sr=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
-      if(sr.ok){const sd=await sr.json();if(sd.text){aiText=sd.text;console.log('[AI] Server proxy ✅');}}
-    }catch(e){console.warn('[AI] Server proxy failed, trying client-side');}
-
-    // If server proxy failed, try client-side with user's key
-    if(!aiText&&aiKey){
-      if(aiKey.startsWith('sk-or-')){
-        // OpenRouter
-        const models=['meta-llama/llama-3.2-3b-instruct:free','meta-llama/llama-3.1-8b-instruct:free','google/gemma-2-9b-it:free','qwen/qwen-2-7b-instruct:free'];
-        for(const model of models){
-          try{
-            const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiKey,'HTTP-Referer':'https://signal-monitor-production-494f.up.railway.app','X-Title':'SignalMonitor'},body:JSON.stringify({model,messages:[{role:'user',content:prompt}],max_tokens:600})});
-            const data=await r.json();
-            if(!data.error&&data.choices?.[0]?.message?.content){aiText=data.choices[0].message.content;console.log('[AI] OpenRouter model:',model);break;}
-          }catch(e){}
-        }
-      } else {
-        // Gemini
-        const models=['gemini-1.5-flash','gemini-1.5-pro','gemini-pro'];
-        for(const model of models){
-          try{
-            const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${aiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.3,maxOutputTokens:600}})});
-            const data=await r.json();
-            if(!data.error){aiText=data.candidates?.[0]?.content?.parts?.[0]?.text||'';if(aiText){console.log('[AI] Gemini model:',model);break;}}
-          }catch(e){}
-        }
-      }
-    }
-
-    // If all APIs fail — use smart indicator-based fallback (always works, no API needed)
-    if(!aiText){
-      console.warn('[AI] All APIs failed — using indicator fallback');
-      const best=ranked[0];
-      const dir=best.sig==='WAIT'?(best.mh>0?'BUY':'SELL'):best.sig;
-      aiText=JSON.stringify({
-        pair:best.pair.display, direction:dir, timeframe:'5 min',
-        confidence:best.cp, score:best.fs,
-        riskLevel:best.riskScore<=30?'LOW':best.riskScore<=55?'MEDIUM':'HIGH',
-        reason:`RSI at ${best.rsi} (${best.rsi<35?'oversold — buyers entering':best.rsi>65?'overbought — sellers entering':'neutral zone'}). MACD histogram ${best.mh>0?'positive — upward momentum':'negative — downward momentum'}. Stochastic at ${best.sv} (${best.sv<25?'oversold':'overbought'}). Confluence ${best.cp}% — ${best.cp>=60?'strong':'moderate'} signal alignment.`,
-        avoid:ranked.slice(-2).map(p=>p.pair.display),
-        avoidReason:'Lower confluence and higher risk scores',
-        bestWindow:cw.s+'-'+cw.e+' IST',
-        warning:best.riskScore>50?'Medium risk — use smaller trade size':'Low risk window — normal size ok'
-      });
-    }
-    const raw=aiText.trim();
-    let sug;
-    try{
-      // Try multiple parsing strategies
-      let clean=raw.trim();
-      // Remove markdown code blocks
-      clean=clean.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
-      // Find JSON object in the response
-      const start=clean.indexOf('{');
-      const end=clean.lastIndexOf('}');
-      if(start!==-1&&end!==-1&&end>start){
-        clean=clean.slice(start,end+1);
-      }
-      sug=JSON.parse(clean);
-    }catch(parseErr){
-      // If JSON parse fails, build a fallback from the best pair data
-      console.warn('JSON parse failed, using fallback',parseErr);
-      const best=ranked[0];
-      sug={
-        pair: best.pair.display,
-        direction: best.sig==='WAIT'?(best.mh>0?'BUY':'SELL'):best.sig,
-        timeframe: '5 min',
-        confidence: best.cp,
-        score: best.fs,
-        riskLevel: best.riskScore<=30?'LOW':best.riskScore<=55?'MEDIUM':'HIGH',
-        reason: `Best available signal based on confluence score ${best.cp}% and final score ${best.fs}/100. RSI at ${best.rsi}, MACD ${best.mh>0?'positive':'negative'}.`,
-        avoid: ranked.slice(1).map(p=>p.pair.display),
-        avoidReason: 'Lower confluence and higher risk scores',
-        bestWindow: curWin().s+'-'+curWin().e+' IST',
-        warning: best.riskScore>50?'Medium-high risk — trade small size':'Low risk window — normal size ok'
-      };
-    }
-
-    // Find entry price for this pair
-    const pairKey=Object.keys(pairData).find(k=>pairData[k].pair.display===sug.pair)||Object.keys(pairData)[0];
-    const pd=pairData[pairKey];
-    const entryPrice=pd?pd.pr:0;
-    const now=new Date();const ut=now.getTime()+now.getTimezoneOffset()*60000;const ist=new Date(ut+IST*3600000);
-    const ds=ist.getFullYear()+'-'+(ist.getMonth()+1).toString().padStart(2,'0')+'-'+ist.getDate().toString().padStart(2,'0');
-    const ts=ist.getHours().toString().padStart(2,'0')+':'+ist.getMinutes().toString().padStart(2,'0');
-
-    const sugId=Date.now();
-    const sugRecord={
-      id:sugId, date:ds, time:ts, pair:sug.pair, pairKey, direction:sug.direction,
-      timeframe:sug.timeframe, confidence:sug.confidence, score:sug.score,
-      riskLevel:sug.riskLevel, reason:sug.reason, avoid:sug.avoid||[],
-      avoidReason:sug.avoidReason||'', bestWindow:sug.bestWindow||'',
-      warning:sug.warning||'', entryPrice, result:'PENDING',
-      entryPriceDisplay:pd?entryPrice.toFixed(pd.pair.dec):'—',
-      jp:pd?pd.jp:false
-    };
-    // Save to cache to avoid wasting Gemini quota
-    setAICache(sugRecord);
-
-    // Save immediately as PENDING
-    const hist=getAIHistory();
-    hist.unshift(sugRecord);
-    saveAIHistory(hist);
-
-    // Render the suggestion card
-    renderSuggestCard(sugRecord, true);
-    badge.textContent=`${sug.direction} ${sug.pair}`;
-    badge.style.color=sug.direction==='BUY'?'var(--green)':'var(--red)';
-    document.getElementById('ai-suggest-ts').textContent=`• ${ts} IST`;
-
-    // Schedule auto WIN/LOSS check in 5 minutes (300s)
-    schedulePriceCheck(sugId, pairKey, sug.direction, entryPrice, pd?pd.pair:PAIRS[0], 300);
-    showToast(`AI suggests: ${sug.direction} ${sug.pair} — checking result in 5 min`,'t-ok');
-
-  }catch(err){
-    console.error('AI error:',err);
-    // If no key or quota exceeded — use smart fallback from indicators
-    if(err.message==='NO_KEY'||err.message.includes('quota')||err.message.includes('exceeded')){
-      const best=Object.values(pairData).filter(p=>p.sig!=='WAIT').sort((a,b)=>b.fs-a.fs)[0]||Object.values(pairData)[0];
-      if(best){
-        const fallbackSug={
-          pair:best.pair.display, direction:best.sig==='WAIT'?(best.mh>0?'BUY':'SELL'):best.sig,
-          timeframe:'5 min', confidence:best.cp, score:best.fs,
-          riskLevel:best.riskScore<=30?'LOW':best.riskScore<=55?'MEDIUM':'HIGH',
-          reason:`Based on indicators: RSI ${best.rsi} (${best.rsi<30?'oversold-BUY':best.rsi>70?'overbought-SELL':'neutral'}), MACD ${best.mh>0?'positive':'negative'}, Stochastic ${best.sv}, Confluence ${best.cp}%. Score ${best.fs}/100.`,
-          avoid:[], avoidReason:'', bestWindow:curWin().s+'-'+curWin().e+' IST',
-          warning:'AI quota exceeded — using indicator-based suggestion only'
-        };
-        const now=new Date();const ut=now.getTime()+now.getTimezoneOffset()*60000;const ist=new Date(ut+IST*3600000);
-        const ds=ist.getFullYear()+'-'+(ist.getMonth()+1).toString().padStart(2,'0')+'-'+ist.getDate().toString().padStart(2,'0');
-        const ts=ist.getHours().toString().padStart(2,'0')+':'+ist.getMinutes().toString().padStart(2,'0');
-        const sugRecord={id:Date.now(),date:ds,time:ts,...fallbackSug,pairKey:best.pair.id,entryPrice:best.pr,entryPriceDisplay:best.pr.toFixed(best.pair.dec),result:'PENDING',jp:best.jp||false};
-        setAICache(sugRecord);
-        const hist=getAIHistory();hist.unshift(sugRecord);saveAIHistory(hist);
-        renderSuggestCard(sugRecord,false);
-        badge.textContent=`${fallbackSug.direction} ${fallbackSug.pair}`;
-        badge.style.color=fallbackSug.direction==='BUY'?'var(--green)':'var(--red)';
-        showToast('⚠️ Using indicator-based suggestion (no AI quota). Get free key at openrouter.ai','t-ok');
-        return;
-      }
-    }
-    box.innerHTML=`<div style="color:var(--red);padding:16px">
-      <div style="font-weight:600;margin-bottom:8px">❌ AI Error: ${err.message}</div>
-      <div style="font-size:11px;color:var(--muted);line-height:1.8">
-        <strong style="color:var(--gold)">Get free AI key (works in India, no quota issues):</strong><br>
-        1. Go to <a href="https://openrouter.ai" target="_blank" style="color:var(--blue)">openrouter.ai</a> → Sign up free<br>
-        2. Click Keys → Create Key → copy it (starts with sk-or-...)<br>
-        3. Paste in ⚙️ Settings → Gemini API Key field → Save<br>
-        Free credits given on signup — no quota limits like Gemini!
+  if(strongSignals.length===0&&goodSignals.length===0){
+    html=`<div style="text-align:center;padding:30px">
+      <div style="font-size:40px;margin-bottom:12px">😴</div>
+      <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px">No Strong Signals Right Now</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.8;max-width:400px;margin:0 auto">
+        None of the 9 pairs have 85%+ confidence signal at this moment.<br>
+        This is normal — strong signals are rare and only appear ${strongSignals.length+goodSignals.length} times per day.<br><br>
+        <strong style="color:var(--gold)">What to do:</strong> Wait and click Get Suggestion again in 15-30 minutes. The best trades come to those who wait.
       </div>
     </div>`;
-    badge.textContent='Error';badge.style.color='var(--red)';
+  } else {
+    // Show strong signals first
+    if(strongSignals.length>0){
+      html+=`<div style="padding:10px 14px;background:#22c55e12;border-bottom:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:600;color:var(--green)">🎯 ${strongSignals.length} STRONG SIGNAL${strongSignals.length>1?'S':''} — 85%+ Confidence — Take these trades!</div>
+      </div>`;
+      strongSignals.forEach(s=>{ html+=buildSignalRow(s,'strong'); });
+    }
+
+    // Show good signals
+    if(goodSignals.length>0){
+      html+=`<div style="padding:10px 14px;background:#fbbf2408;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-top:8px">
+        <div style="font-size:12px;font-weight:600;color:var(--amber)">⚡ ${goodSignals.length} GOOD SIGNAL${goodSignals.length>1?'S':''} — 70-84% Confidence — Trade with smaller size</div>
+      </div>`;
+      goodSignals.forEach(s=>{ html+=buildSignalRow(s,'good'); });
+    }
   }
+
+  // Show weak/no-trade pairs
+  html+=`<div style="padding:10px 14px;background:var(--bg3);border-top:1px solid var(--border);margin-top:8px">
+    <div style="font-size:12px;font-weight:600;color:var(--muted)">❌ No Trade Today — Below 70% Confidence</div>
+  </div>`;
+  weakSignals.forEach(s=>{
+    html+=`<div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:13px;font-weight:600;color:var(--muted)">${s.pair}</span>
+      <span style="font-size:11px;color:var(--muted)">Conf: ${s.confidence}% — ${s.confidence<50?'Very weak signal':'Weak signal — wait for better setup'}</span>
+    </div>`;
+  });
+  // Also show WAIT pairs
+  const allPairIds=Object.values(pairData).map(p=>p.pair.display);
+  const analyzedIds=allSignals.map(s=>s.pair);
+  allPairIds.filter(id=>!analyzedIds.includes(id)).forEach(id=>{
+    html+=`<div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:13px;font-weight:600;color:var(--muted)">${id}</span>
+      <span style="font-size:11px;color:var(--muted)">WAIT — No clear direction</span>
+    </div>`;
+  });
+
+  box.innerHTML=html;
+
+  const best=strongSignals[0]||goodSignals[0];
+  if(best){
+    badge.textContent=`${best.direction} ${best.pair} ${best.confidence}%`;
+    badge.style.color=best.direction==='BUY'?'var(--green)':'var(--red)';
+    // Send email for strong signals
+    if(strongSignals.length>0){
+      const s=strongSignals[0];
+      sendHCEmail(s.pair,s.direction,s.confidence,s.score,s.currentPrice,s);
+    }
+  } else {
+    badge.textContent='No trade now';
+    badge.style.color='var(--muted)';
+  }
+}
+
+function buildSignalRow(s, strength){
+  const dirColor=s.direction==='BUY'?'var(--green)':'var(--red)';
+  const borderColor=strength==='strong'?'var(--green)':'var(--amber)';
+  return `<div style="margin:10px 14px;background:var(--bg3);border:1px solid ${borderColor}33;border-left:3px solid ${borderColor};border-radius:10px;padding:14px;cursor:pointer" onclick="this.querySelector('.signal-detail').style.display=this.querySelector('.signal-detail').style.display==='none'?'block':'none'">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px;font-weight:700;font-family:var(--font-head);color:${dirColor}">${s.pair}</span>
+        <span style="font-size:13px;font-weight:700;padding:3px 12px;border-radius:12px;background:${s.direction==='BUY'?'var(--green-dim)':'var(--red-dim)'};color:${dirColor}">${s.direction==='BUY'?'▲ BUY':'▼ SELL'}</span>
+        ${s.jp?'<span style="font-size:11px;background:#fbbf2420;color:var(--gold);padding:2px 8px;border-radius:8px">🎯 JACKPOT</span>':''}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:14px;font-weight:700;color:${strength==='strong'?'var(--green)':'var(--amber)'}">${s.confidence}% Conf</span>
+        <span style="font-size:11px;color:var(--muted)">tap for details ▼</span>
+      </div>
+    </div>
+
+    <!-- Quick info -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+      <div style="background:var(--bg2);border-radius:6px;padding:8px 10px;text-align:center">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:2px">Current Price</div>
+        <div style="font-size:13px;font-weight:600;font-family:var(--font-head)">${s.currentPrice}</div>
+      </div>
+      <div style="background:${s.direction==='BUY'?'var(--green-dim)':'var(--red-dim)'};border-radius:6px;padding:8px 10px;text-align:center;border:1px solid ${dirColor}44">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:2px">✅ Enter At</div>
+        <div style="font-size:13px;font-weight:700;font-family:var(--font-head);color:${dirColor}">${s.entryZone}</div>
+      </div>
+      <div style="background:var(--red-dim);border-radius:6px;padding:8px 10px;text-align:center;border:1px solid #ef444433">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:2px">❌ Skip If</div>
+        <div style="font-size:13px;font-weight:600;font-family:var(--font-head);color:var(--red)">${s.direction==='BUY'?'above':'below'} ${s.avoidIfPrice}</div>
+      </div>
+    </div>
+
+    <!-- When to take -->
+    <div style="background:#fbbf2410;border:1px solid #fbbf2425;border-radius:6px;padding:9px 12px;margin-bottom:8px;font-size:12px;color:var(--text);line-height:1.6">
+      <strong style="color:var(--gold)">⏰ When to take:</strong> ${s.whenToTake}
+    </div>
+
+    <!-- Expandable detail -->
+    <div class="signal-detail" style="display:none;margin-top:10px">
+      <div style="font-size:11px;background:var(--bg2);border-radius:6px;padding:10px 12px;margin-bottom:8px;font-family:var(--font-mono);color:var(--text);line-height:2">${s.keyLevels}</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:8px"><strong style="color:var(--text)">Why:</strong> ${s.reason}</div>
+      ${s.warnings.length?`<div style="font-size:11px;color:var(--amber);line-height:1.7">⚠️ ${s.warnings.join(' · ')}</div>`:''}
+    </div>
+  </div>`;
 }
 
 function renderSuggestCard(sug, isLive){
