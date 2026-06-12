@@ -1,15 +1,22 @@
 {
-  "name": "signal-monitor",
+  "name": "dhitta-trading-signals",
   "version": "1.0.0",
-  "description": "Indian Forex & Crypto Signal Monitor — 24/7 free",
+  "description": "Dhitta Trading Signals — Binary options signal monitor for India",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "node-fetch": "^3.3.2"
+    "start": "node server.js",
+    "dev": "node server.js"
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "bcryptjs": "^2.4.3"
+  },
+  "keywords": ["trading", "signals", "binary-options", "india"],
+  "author": "Anil — Dhitta Trading Signals",
+  "license": "UNLICENSED",
+  "private": true
 }
