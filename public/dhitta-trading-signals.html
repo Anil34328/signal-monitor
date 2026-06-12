@@ -34,8 +34,22 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 1.6s infinite;display:inline-block}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 .clock{font-size:15px;color:var(--gold);font-weight:600;font-family:var(--font-head)}
-.tabs{display:flex;gap:4px;margin-bottom:18px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:4px}
-.tab{flex:1;text-align:center;padding:8px;font-size:12px;border-radius:7px;cursor:pointer;color:var(--muted);transition:all .2s;font-family:var(--font-mono)}
+.tabs{
+display:flex;
+gap:12px;
+margin-bottom:25px;
+background:transparent;
+border:none;
+padding:0;
+}
+.tab{
+flex:none;
+padding:12px 22px;
+border-radius:999px;
+cursor:pointer;
+background:rgba(255,255,255,.03);
+border:1px solid rgba(255,255,255,.08);
+}
 .tab.active{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}
 .tab-panel{display:none}.tab-panel.active{display:block}
 .settings{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
@@ -519,12 +533,12 @@ margin-bottom:16px;
     <div class="ai-suggest-hdr">
       <div class="ai-suggest-title">
         <span>🤖</span>
-        <span>AI Signal Recommendation</span>
+        <span>DHITTA ORACLE</span>
         <span id="ai-suggest-ts" style="font-size:11px;color:var(--muted);font-weight:400"></span>
       </div>
       <div style="display:flex;gap:7px;align-items:center">
         <span id="ai-suggest-badge" style="font-size:11px;padding:3px 10px;border-radius:10px;background:var(--bg3);color:var(--muted);border:1px solid var(--border2)">Awaiting analysis</span>
-        <button class="btn primary" onclick="runAISuggest()" style="font-size:11px">⚡ Get Suggestion</button>
+        <button class="btn primary" onclick="runAISuggest()" style="font-size:11px">⚡ Consult Oracle</button>
       </div>
     </div>
     <div class="ai-suggest-body" id="ai-suggest-body">
