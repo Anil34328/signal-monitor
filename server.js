@@ -40,7 +40,7 @@ function requireAuth(req, res, next) {
 // ── LOGIN ROUTES ──────────────────────────────────────────────────────────────
 app.get('/login', (req, res) => {
   if (req.session && req.session.userId) return res.redirect('/');
-  res.sendFile(path.join(__dirname, 'login.html'));
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 app.post('/login', (req, res) => {
@@ -196,11 +196,11 @@ app.get('/health', (req, res) => res.json({ status: 'ok', app: 'Dhitta Trading S
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 app.get('/', requireAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'dhitta-trading-signals.html'));
+  res.sendFile(path.join(__dirname, 'public', 'dhitta-trading-signals.html'));
 });
 
 app.get('*', requireAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'dhitta-trading-signals.html'));
+  res.sendFile(path.join(__dirname, 'public', 'dhitta-trading-signals.html'));
 });
 
 // ── START ─────────────────────────────────────────────────────────────────────
