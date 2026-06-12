@@ -18,7 +18,13 @@
   --font-head:'Syne',sans-serif;--font-mono:'DM Mono',monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:var(--font-mono);min-height:100vh}
+body{
+background:radial-gradient(circle at top right,#fbbf2412 0%,transparent 25%),radial-gradient(circle at bottom left,#fbbf2410 0%,transparent 30%),#050505;
+color:var(--text);
+font-family:var(--font-mono);
+min-height:100vh;
+overflow-x:hidden;
+}
 .shell{max-width:1120px;margin:0 auto;padding:22px 16px 60px}
 header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
 .logo{font-family:var(--font-head);font-size:20px;font-weight:700;letter-spacing:-.02em}
@@ -42,7 +48,13 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .api-note{font-size:11px;color:var(--muted);padding:8px 12px;background:var(--bg2);border-radius:6px;border:1px solid var(--border);margin-bottom:14px;line-height:1.7}
 .api-note a{color:var(--blue);text-decoration:none}
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
-.metric{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px 15px}
+.metric{
+background:rgba(17,19,24,.85);
+backdrop-filter:blur(18px);
+border:1px solid rgba(251,191,36,.12);
+border-radius:24px;
+padding:22px;
+}
 .metric-label{font-size:10px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px}
 .metric-value{font-size:19px;font-weight:500;font-family:var(--font-head)}
 .metric-sub{font-size:11px;color:var(--muted);margin-top:3px}
@@ -60,7 +72,15 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .wq-avoid{background:#ef444412;border:1px solid #ef444444;color:var(--red)}
 .pairs-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 #pair-detail-wrap .pair-card{margin-bottom:16px;max-width:100%}
-.pair-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:17px;transition:border-color .3s}
+.pair-card{
+background:rgba(17,19,24,.75);
+backdrop-filter:blur(18px);
+border:1px solid rgba(251,191,36,.12);
+border-radius:24px;
+padding:24px;
+transition:.35s;
+box-shadow:0 10px 40px rgba(0,0,0,.4);
+}
 .pair-card.signal-buy{border-color:#22c55e55}
 .pair-card.signal-sell{border-color:#ef444455}
 .jackpot-card{border-color:var(--jackpot)!important;box-shadow:0 0 20px #ff6b3518}
@@ -115,7 +135,14 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .g-C{background:#f59e0b18;color:var(--amber)}
 .g-D{background:#ef444418;color:var(--red)}
 .g-F{background:var(--bg3);color:var(--muted)}
-.ai-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;overflow:hidden}
+.ai-box{
+background:rgba(17,19,24,.8);
+backdrop-filter:blur(20px);
+border:1px solid rgba(251,191,36,.15);
+border-radius:24px;
+overflow:hidden;
+margin-bottom:16px;
+}
 .ai-hdr{padding:11px 17px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .ai-title{font-family:var(--font-head);font-size:13px;font-weight:600;color:var(--gold)}
 .ai-body{padding:15px 17px;font-size:13px;line-height:1.7;color:var(--text);min-height:56px}
@@ -241,7 +268,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 /* DHITTA LOGO */
 .dhitta-logo-wrap{display:flex;align-items:center;gap:12px}
 .dhitta-wordmark{line-height:1}
-.dhitta-name{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;letter-spacing:.04em;background:linear-gradient(135deg,#f6d365 0%,#fbbf24 40%,#d97706 70%,#fbbf24 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.dhitta-name{font-family:'Syne',sans-serif;font-size:42px;font-weight:700;letter-spacing:.04em;background:linear-gradient(135deg,#f6d365 0%,#fbbf24 40%,#d97706 70%,#fbbf24 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .dhitta-tagline{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:#a07a20;margin-top:1px;font-family:'DM Mono',monospace}
 
 /* AUTH BAR */
