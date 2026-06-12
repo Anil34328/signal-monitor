@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SignalMonitor India — EUR/USD · GBP/USD · XAU/USD · USD/JPY</title>
+<title>Dhitta Trading Signals — EUR/USD · GBP/USD · XAU/USD · USD/JPY</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -237,19 +237,101 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .watch-item{font-size:12px;color:var(--muted);margin-bottom:5px;padding-left:12px;position:relative}
 .watch-item::before{content:'→';position:absolute;left:0;color:var(--gold)}
 @media(max-width:700px){.pairs-grid,.ist-grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.fml-grid{grid-template-columns:1fr}.ranked-row{grid-template-columns:26px 100px 1fr 58px 68px}.tracker-stats{grid-template-columns:repeat(3,1fr)}.suggest-meta{grid-template-columns:repeat(2,1fr)}.aistats-grid{grid-template-columns:repeat(3,1fr)}.ai-hist-row{grid-template-columns:60px 60px 70px 60px 1fr}.ai-hist-row span:nth-child(6),.ai-hist-row span:nth-child(7){display:none}.pair-perf-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* DHITTA LOGO */
+.dhitta-logo-wrap{display:flex;align-items:center;gap:12px}
+.dhitta-wordmark{line-height:1}
+.dhitta-name{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;letter-spacing:.04em;background:linear-gradient(135deg,#f6d365 0%,#fbbf24 40%,#d97706 70%,#fbbf24 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.dhitta-tagline{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:#a07a20;margin-top:1px;font-family:'DM Mono',monospace}
+
+/* AUTH BAR */
+.auth-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.user-badge{display:flex;align-items:center;gap:7px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px}
+.user-avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#d97706);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#000;font-family:var(--font-head);flex-shrink:0}
+.user-name{color:var(--text);font-weight:500}
+.logout-btn{background:var(--bg2);border:1px solid rgba(239,68,68,0.3);color:#ef4444;font-family:var(--font-mono);font-size:11px;padding:5px 12px;border-radius:20px;cursor:pointer;transition:all .2s}
+.logout-btn:hover{background:#ef444415;border-color:#ef4444}
+
+/* ROLE-BASED ACCESS */
+.readonly-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;
+  background:#3b82f618;border:1px solid #3b82f630;color:var(--blue);
+  border-radius:20px;padding:3px 9px;margin-left:8px;vertical-align:middle}
+.admin-only-section{transition:opacity .2s}
+.admin-only-section.locked{opacity:.38;pointer-events:none;user-select:none;filter:blur(1.5px)}
+.locked-overlay{display:none;position:absolute;inset:0;z-index:10;
+  background:rgba(10,12,15,0.55);border-radius:10px;
+  align-items:center;justify-content:center;flex-direction:column;gap:8px;
+  font-size:13px;color:var(--muted);text-align:center;padding:20px}
+.locked-overlay.show{display:flex}
+.lock-icon{font-size:28px;margin-bottom:4px}
+.settings-locked-msg{background:var(--bg2);border:1px solid var(--border2);
+  border-radius:10px;padding:12px 16px;margin-bottom:14px;
+  font-size:12px;color:var(--muted);display:none;align-items:center;gap:10px}
+.settings-locked-msg.show{display:flex}
 </style>
 </head>
 <body>
 <div class="shell">
 <header>
-  <div>
-    <div class="logo">Signal<span>Monitor</span><sub>India &#x1F1EE;&#x1F1F3;</sub></div>
-    <div style="font-size:11px;color:var(--muted);margin-top:3px">EUR/USD · GBP/USD · XAU/USD · USD/JPY · BTC · ETH · BNB · SOL · XRP &middot; 5-min expiry</div>
+  <div class="dhitta-logo-wrap">
+    <svg width="62" height="62" viewBox="0 0 62 62" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="goldG" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f6d365"/>
+      <stop offset="40%" stop-color="#fbbf24"/>
+      <stop offset="70%" stop-color="#b45309"/>
+      <stop offset="100%" stop-color="#fbbf24"/>
+    </linearGradient>
+    <linearGradient id="goldG2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="50%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#92400e"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <!-- D letter body -->
+  <path d="M10 8 L10 54 L28 54 C42 54 52 44 52 31 C52 18 42 8 28 8 Z
+           M18 16 L27 16 C36 16 43 23 43 31 C43 39 36 46 27 46 L18 46 Z"
+        fill="url(#goldG)" filter="url(#glow)"/>
+  <!-- Candlestick 1 (left-short) -->
+  <rect x="22" y="26" width="3" height="12" rx="0.5" fill="url(#goldG2)" opacity="0.95"/>
+  <rect x="23" y="24" width="1" height="3" rx="0.5" fill="#fde68a"/>
+  <rect x="23" y="38" width="1" height="3" rx="0.5" fill="#fde68a"/>
+  <!-- Candlestick 2 (mid-tall) -->
+  <rect x="27" y="21" width="3" height="15" rx="0.5" fill="url(#goldG2)" opacity="0.95"/>
+  <rect x="28" y="19" width="1" height="3" rx="0.5" fill="#fde68a"/>
+  <rect x="28" y="36" width="1" height="3" rx="0.5" fill="#fde68a"/>
+  <!-- Candlestick 3 (right-mid) -->
+  <rect x="32" y="23" width="3" height="13" rx="0.5" fill="url(#goldG2)" opacity="0.95"/>
+  <rect x="33" y="21" width="1" height="3" rx="0.5" fill="#fde68a"/>
+  <rect x="33" y="36" width="1" height="3" rx="0.5" fill="#fde68a"/>
+  <!-- Swoosh arrow curve -->
+  <path d="M14 50 Q31 58 50 42" stroke="url(#goldG)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <!-- Arrow head -->
+  <polygon points="50,42 44,40 47,46" fill="url(#goldG)"/>
+</svg>
+    <div class="dhitta-wordmark">
+      <div class="dhitta-name">Dhitta</div>
+      <div class="dhitta-tagline">Trading Signals &nbsp;&#x2014;&nbsp; India &#x1F1EE;&#x1F1F3;</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:3px">EUR/USD &middot; GBP/USD &middot; XAU/USD &middot; USD/JPY &middot; BTC &middot; ETH &middot; 5-min</div>
+    </div>
   </div>
   <div class="status-bar">
     <span><span class="live-dot"></span> Live</span>
     <span class="clock" id="clock">--:--:-- IST</span>
     <button class="btn primary" onclick="runAll()">&#x27F3; Refresh All</button>
+    <div class="auth-bar">
+      <div class="user-badge">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <span class="user-name" id="user-name">Loading...</span>
+      </div>
+      <form method="POST" action="/logout" style="margin:0">
+        <button type="submit" class="logout-btn">&#x2192; Logout</button>
+      </form>
+    </div>
   </div>
 </header>
 
@@ -267,10 +349,22 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
   <!-- SETTINGS PANEL -->
   <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden">
     <div style="padding:11px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleSettings()">
-      <span style="font-size:13px;font-weight:600;font-family:var(--font-head);display:flex;align-items:center;gap:8px">⚙️ Settings &amp; API Keys <span id="settings-status" style="font-size:11px;font-weight:400;color:var(--muted)">— click to configure</span></span>
+      <span style="font-size:13px;font-weight:600;font-family:var(--font-head);display:flex;align-items:center;gap:8px">
+        ⚙️ Settings &amp; API Keys
+        <span id="settings-status" style="font-size:11px;font-weight:400;color:var(--muted)">— click to configure</span>
+        <span id="role-badge" style="display:none" class="readonly-badge">👁 View only</span>
+      </span>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="btn primary" onclick="event.stopPropagation();runAll()" style="font-size:12px">⟳ Analyze All</button>
         <span id="settings-arrow" style="color:var(--muted);font-size:12px">▼</span>
+      </div>
+    </div>
+    <div style="position:relative">
+    <div id="settings-locked-msg" class="settings-locked-msg">
+      <span style="font-size:20px">🔒</span>
+      <div>
+        <div style="font-weight:600;color:var(--text);margin-bottom:2px">Read-only access</div>
+        <div>API keys can only be changed by the admin. All signals and features work normally.</div>
       </div>
     </div>
     <div id="settings-body" style="display:none;padding:16px;border-top:1px solid var(--border)">
@@ -330,10 +424,17 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
           <option value="90" selected>90% — High quality only</option>
           <option value="95">95% — Strongest only</option>
         </select>
-        <div style="font-size:11px;color:var(--muted)">🔒 Keys saved only in your browser</div>
+        <div style="font-size:11px;color:var(--muted)" id="admin-only-note">🔒 Keys saved only in your browser</div>
       </div>
+    </div><!-- /settings-body -->
+    <!-- Locked overlay for non-admins -->
+    <div id="settings-lock-overlay" class="locked-overlay">
+      <div class="lock-icon">🔒</div>
+      <div style="font-weight:600;color:var(--text);font-family:var(--font-head)">Admin Only</div>
+      <div style="font-size:12px">API keys can only be<br>changed by Anil</div>
     </div>
-  </div>
+  </div><!-- /settings-relative-wrap -->
+</div>
   <div class="metrics">
     <div class="metric"><div class="metric-label">Best signal now</div><div class="metric-value gold" id="m-best">--</div><div class="metric-sub" id="m-best-sub">--</div></div>
     <div class="metric"><div class="metric-label">IST window</div><div class="metric-value" id="m-win">--</div><div class="metric-sub" id="m-win-sub">--</div></div>
@@ -562,6 +663,7 @@ function toggleSettings(){
   if(!open) loadKeysIntoUI();
 }
 function saveAnthropicKeySetting(){
+  if (window._keysLocked) { showToast('🔒 Only Anil (admin) can change API keys','t-err'); return; }
   const k=document.getElementById('anthropic-key-setting').value.trim();
   if(!k){showToast('Please paste your Gemini key','t-err');return;}
   localStorage.setItem('anthropic_key',k);
@@ -602,6 +704,7 @@ function updateSettingsStatus(){
   if(st)st.textContent=parts.length?parts.join(' · '):'— click to configure API keys';
 }
 function saveKeys(){
+  if (window._keysLocked) { showToast('🔒 Only Anil (admin) can change API keys','t-err'); return; }
   const av=document.getElementById('av-key')?.value.trim()||'';
   const ak=document.getElementById('anthropic-key-setting')?.value.trim()||'';
   const sid=document.getElementById('ejs-sid')?.value.trim()||'';
@@ -1650,7 +1753,7 @@ function exportHistory(){
   if(!hist.length){showToast('No history to export yet','t-err');return;}
   const payload={
     exported: new Date().toISOString(),
-    app: 'SignalMonitor India',
+    app: 'Dhitta Trading Signals',
     version: 2,
     suggestions: hist
   };
@@ -1883,6 +1986,7 @@ if(ejsPub){try{emailjs.init(ejsPub);}catch(e){}}
 
 function saveApiFromModal(){saveGeminiFromModal();}
 function saveGeminiFromModal(){
+  if (window._keysLocked) { showToast('🔒 Only Anil (admin) can change API keys','t-err'); return; }
   const key=document.getElementById('modal-av-key').value.trim();
   if(!key){showToast('Please paste your Gemini API key first','t-err');return;}
   localStorage.setItem('anthropic_key',key);
@@ -1914,6 +2018,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     },5*60*1000);
     updateClock();
     runAll();
+    loadUserInfo();
     resolvePendingSuggestions();
     updateStorageInfo();
     setTimeout(updateSettingsStatus,500);
@@ -1928,6 +2033,90 @@ window.addEventListener('DOMContentLoaded',()=>{
     },1500);
   }catch(e){console.error('Startup error:',e);}
 });
+
+// ── AUTH: fetch logged-in user info ──────────────────
+async function loadUserInfo() {
+  try {
+    const res = await fetch('/api/me');
+    if (res.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+    const user = await res.json();
+
+    // Update name + avatar in header
+    const nameEl   = document.getElementById('user-name');
+    const avatarEl = document.getElementById('user-avatar');
+    if (nameEl)   nameEl.textContent   = user.displayName || user.username;
+    if (avatarEl) avatarEl.textContent = (user.displayName || user.username).charAt(0).toUpperCase();
+
+    // ── ROLE-BASED ACCESS ──────────────────────────────────────────────
+    const isAdmin = user.role === 'admin';
+    window._isAdmin = isAdmin;
+
+    if (!isAdmin) {
+      // Show "View only" badge in settings header
+      const badge = document.getElementById('role-badge');
+      if (badge) badge.style.display = 'inline-flex';
+
+      // Show the locked message above settings body
+      const lockedMsg = document.getElementById('settings-locked-msg');
+      if (lockedMsg) lockedMsg.classList.add('show');
+
+      // Show the blurred overlay on top of settings content
+      const overlay = document.getElementById('settings-lock-overlay');
+      if (overlay) overlay.classList.add('show');
+
+      // Disable toggleSettings click for non-admins — settings open but show locked
+      const settingsHdr = document.querySelector('[onclick="toggleSettings()"]');
+      if (settingsHdr) {
+        settingsHdr.style.cursor = 'default';
+        settingsHdr.onclick = () => {
+          showToast('🔒 Only Anil (admin) can change API keys', 't-err');
+        };
+      }
+
+      // Disable the Analyze All button? No — keep it enabled, only keys are locked
+      // Disable all inputs and buttons inside settings-body
+      const body = document.getElementById('settings-body');
+      if (body) {
+        body.querySelectorAll('input, select, button').forEach(el => {
+          el.disabled = true;
+          el.style.pointerEvents = 'none';
+          el.style.opacity = '0.4';
+        });
+      }
+
+      // Hide the admin-only note (not relevant for them)
+      const note = document.getElementById('admin-only-note');
+      if (note) note.style.display = 'none';
+
+      // Also disable the modal API key popup inputs if shown
+      const modalInput = document.getElementById('modal-av-key');
+      if (modalInput) {
+        modalInput.disabled = true;
+        modalInput.placeholder = 'API keys managed by admin only';
+      }
+      const modalBtn = document.querySelector('[onclick="saveGeminiFromModal()"]');
+      if (modalBtn) {
+        modalBtn.disabled = true;
+        modalBtn.style.opacity = '0.4';
+        modalBtn.style.pointerEvents = 'none';
+      }
+
+      // Prevent saveKeys / saveAnthropicKeySetting from running
+      window._keysLocked = true;
+
+      console.log('[Auth] Read-only mode active for:', user.username);
+    } else {
+      window._keysLocked = false;
+      console.log('[Auth] Admin mode active for:', user.username);
+    }
+  } catch(e) {
+    console.warn('Could not load user info:', e);
+  }
+}
+
 </script>
 
 <!-- API KEY POPUP MODAL -->
