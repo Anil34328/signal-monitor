@@ -1,7 +1,7 @@
 {
   "name": "dhitta-trading-signals",
   "version": "1.0.0",
-  "description": "Dhitta Trading Signals",
+  "description": "Dhitta Trading Signals — Professional Binary Options Signal Monitor",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
