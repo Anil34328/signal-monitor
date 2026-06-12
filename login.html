@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dhitta Trading Signals — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0c0f;--bg2:#111318;--bg3:#181c22;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);
+  --text:#e8eaf0;--muted:#6b7280;
+  --gold:#fbbf24;--gold2:#f59e0b;--gold3:#92400e;
+  --green:#22c55e;--red:#ef4444;
+  --font:'Syne',sans-serif;--mono:'DM Mono',monospace;
+}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--mono);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  position:relative;
+  overflow:hidden;
+}
+
+/* Animated background grid */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(251,191,36,0.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(251,191,36,0.03) 1px,transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+}
+/* Glow orbs */
+body::after{
+  content:'';
+  position:fixed;
+  width:600px;height:600px;
+  background:radial-gradient(circle,rgba(251,191,36,0.06) 0%,transparent 70%);
+  top:-200px;left:50%;transform:translateX(-50%);
+  pointer-events:none;
+}
+
+.login-wrap{
+  width:100%;max-width:420px;
+  position:relative;z-index:1;
+}
+
+/* Logo */
+.logo-section{
+  text-align:center;
+  margin-bottom:32px;
+}
+.logo-svg-wrap{
+  display:flex;justify-content:center;margin-bottom:14px;
+}
+.brand-name{
+  font-family:var(--font);
+  font-size:36px;font-weight:700;
+  letter-spacing:.06em;
+  background:linear-gradient(135deg,#f6d365 0%,#fbbf24 40%,#d97706 70%,#fbbf24 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  line-height:1;
+  margin-bottom:6px;
+}
+.brand-tagline{
+  font-size:11px;letter-spacing:.24em;text-transform:uppercase;
+  color:#a07a20;font-family:var(--mono);
+}
+.brand-sub{
+  font-size:11px;color:var(--muted);margin-top:6px;
+}
+
+/* Card */
+.login-card{
+  background:var(--bg2);
+  border:1px solid var(--border2);
+  border-radius:16px;
+  padding:32px 28px;
+  box-shadow:0 24px 64px rgba(0,0,0,0.5),0 0 0 1px rgba(251,191,36,0.08);
+  position:relative;overflow:hidden;
+}
+.login-card::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+}
+
+.card-title{
+  font-family:var(--font);font-size:15px;font-weight:600;
+  color:var(--text);margin-bottom:4px;
+}
+.card-sub{
+  font-size:12px;color:var(--muted);margin-bottom:24px;
+}
+
+/* Form */
+.field{margin-bottom:16px;}
+.field label{
+  display:block;font-size:11px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px;
+}
+.field input{
+  width:100%;
+  background:var(--bg3);
+  border:1px solid var(--border2);
+  color:var(--text);
+  font-family:var(--mono);font-size:14px;
+  padding:12px 14px;
+  border-radius:8px;
+  outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.field input:focus{
+  border-color:var(--gold);
+  box-shadow:0 0 0 3px rgba(251,191,36,0.1);
+}
+.field input::placeholder{color:#374151;}
+
+/* Password toggle */
+.pw-wrap{position:relative;}
+.pw-wrap input{padding-right:44px;}
+.pw-toggle{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;
+  color:var(--muted);font-size:16px;padding:4px;
+  transition:color .2s;
+}
+.pw-toggle:hover{color:var(--gold);}
+
+/* Submit button */
+.login-btn{
+  width:100%;
+  background:linear-gradient(135deg,var(--gold2),var(--gold));
+  color:#000;
+  font-family:var(--font);font-size:15px;font-weight:700;
+  padding:13px;
+  border:none;border-radius:8px;
+  cursor:pointer;
+  transition:all .2s;
+  letter-spacing:.04em;
+  margin-top:6px;
+  position:relative;overflow:hidden;
+}
+.login-btn::after{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.15),transparent);
+  opacity:0;transition:opacity .2s;
+}
+.login-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(251,191,36,0.35);}
+.login-btn:hover::after{opacity:1;}
+.login-btn:active{transform:translateY(0);}
+
+/* Error */
+.error-box{
+  background:#ef444415;border:1px solid #ef444440;
+  border-radius:8px;padding:10px 14px;
+  font-size:12px;color:var(--red);
+  margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;
+}
+
+/* Divider */
+.divider{
+  border:none;border-top:1px solid var(--border);
+  margin:20px 0;
+}
+
+/* Footer */
+.login-footer{
+  text-align:center;margin-top:20px;
+  font-size:11px;color:var(--muted);line-height:1.7;
+}
+.login-footer strong{color:var(--text);}
+
+/* Loader */
+.login-btn.loading{
+  pointer-events:none;opacity:.8;
+}
+.spinner{
+  display:inline-block;width:14px;height:14px;
+  border:2px solid rgba(0,0,0,0.3);border-top-color:#000;
+  border-radius:50%;animation:spin .7s linear infinite;
+  vertical-align:middle;margin-right:6px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Live pulse */
+.live-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:10px;color:var(--green);
+  background:#22c55e12;border:1px solid #22c55e30;
+  border-radius:20px;padding:3px 9px;margin-bottom:10px;
+}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+
+@media(max-width:480px){
+  .login-card{padding:24px 20px;}
+  .brand-name{font-size:30px;}
+}
+</style>
+</head>
+<body>
+
+<div class="login-wrap">
+
+  <!-- Logo -->
+  <div class="logo-section">
+    <div class="logo-svg-wrap">
+      <svg width="80" height="80" viewBox="0 0 62 62" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#f6d365"/>
+            <stop offset="40%" stop-color="#fbbf24"/>
+            <stop offset="70%" stop-color="#b45309"/>
+            <stop offset="100%" stop-color="#fbbf24"/>
+          </linearGradient>
+          <linearGradient id="gB" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#fde68a"/>
+            <stop offset="50%" stop-color="#fbbf24"/>
+            <stop offset="100%" stop-color="#92400e"/>
+          </linearGradient>
+          <filter id="glow2">
+            <feGaussianBlur stdDeviation="1.8" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <path d="M10 8 L10 54 L28 54 C42 54 52 44 52 31 C52 18 42 8 28 8 Z
+                 M18 16 L27 16 C36 16 43 23 43 31 C43 39 36 46 27 46 L18 46 Z"
+              fill="url(#gA)" filter="url(#glow2)"/>
+        <rect x="22" y="26" width="3" height="12" rx="0.5" fill="url(#gB)" opacity="0.95"/>
+        <rect x="23" y="24" width="1" height="3" rx="0.5" fill="#fde68a"/>
+        <rect x="23" y="38" width="1" height="3" rx="0.5" fill="#fde68a"/>
+        <rect x="27" y="21" width="3" height="15" rx="0.5" fill="url(#gB)" opacity="0.95"/>
+        <rect x="28" y="19" width="1" height="3" rx="0.5" fill="#fde68a"/>
+        <rect x="28" y="36" width="1" height="3" rx="0.5" fill="#fde68a"/>
+        <rect x="32" y="23" width="3" height="13" rx="0.5" fill="url(#gB)" opacity="0.95"/>
+        <rect x="33" y="21" width="1" height="3" rx="0.5" fill="#fde68a"/>
+        <rect x="33" y="36" width="1" height="3" rx="0.5" fill="#fde68a"/>
+        <path d="M14 50 Q31 58 50 42" stroke="url(#gA)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+        <polygon points="50,42 44,40 47,46" fill="url(#gA)"/>
+      </svg>
+    </div>
+    <div class="live-badge"><span class="live-dot"></span> Live Signals</div>
+    <div class="brand-name">Dhitta</div>
+    <div class="brand-tagline">&#x2014; Trading Signals &#x2014;</div>
+    <div class="brand-sub">EUR/USD &middot; GBP/USD &middot; XAU/USD &middot; USD/JPY &middot; India &#127470;&#127475;</div>
+  </div>
+
+  <!-- Login Card -->
+  <div class="login-card">
+    <div class="card-title">Welcome back</div>
+    <div class="card-sub">Sign in to access your signal dashboard</div>
+
+    <!-- Error message -->
+    <div id="err-box" class="error-box" style="display:none">
+      <span>&#x26A0;</span>
+      <span id="err-msg">Invalid username or password. Please try again.</span>
+    </div>
+
+    <form id="login-form" method="POST" action="/login" onsubmit="handleSubmit()">
+      <div class="field">
+        <label for="username">Username</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          placeholder="Enter your username"
+          autocomplete="username"
+          autocapitalize="none"
+          required
+        >
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="pw-wrap">
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+            required
+          >
+          <button type="button" class="pw-toggle" onclick="togglePw()" title="Show/hide password">
+            <span id="pw-eye">👁</span>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="login-btn" id="login-btn">
+        Sign In to Dhitta
+      </button>
+    </form>
+
+    <hr class="divider">
+
+    <div style="font-size:11px;color:var(--muted);text-align:center;line-height:1.8">
+      <div>&#x1F512; Your session stays active for <strong style="color:var(--text)">24 hours</strong></div>
+      <div>&#x1F4F1; Works on mobile &middot; &#x1F4BB; Works on desktop</div>
+    </div>
+  </div>
+
+  <div class="login-footer">
+    <strong>Dhitta Trading Signals</strong><br>
+    Private access only &middot; Unauthorized access prohibited
+  </div>
+
+</div>
+
+<script>
+// Show error from URL param
+const params = new URLSearchParams(window.location.search);
+const errBox = document.getElementById('err-box');
+const errMsg = document.getElementById('err-msg');
+if (params.get('error') === 'invalid') {
+  errBox.style.display = 'flex';
+  errMsg.textContent = 'Invalid username or password. Please try again.';
+} else if (params.get('error') === 'missing') {
+  errBox.style.display = 'flex';
+  errMsg.textContent = 'Please enter both username and password.';
+}
+
+// Auto-focus username
+document.getElementById('username').focus();
+
+// Show loading state on submit
+function handleSubmit() {
+  const btn = document.getElementById('login-btn');
+  btn.classList.add('loading');
+  btn.innerHTML = '<span class="spinner"></span> Signing in...';
+}
+
+// Password toggle
+function togglePw() {
+  const inp = document.getElementById('password');
+  const eye = document.getElementById('pw-eye');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    eye.textContent = '🙈';
+  } else {
+    inp.type = 'password';
+    eye.textContent = '👁';
+  }
+}
+
+// Enter key submits
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('login-form').requestSubmit();
+});
+</script>
+</body>
+</html>
