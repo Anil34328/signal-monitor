@@ -28,29 +28,29 @@ body{
   overflow:hidden;
 }
 
-/* Animated background grid */
+/* Earth background image */
 body::before{
   content:'';
   position:fixed;inset:0;
-  background-image:
-    linear-gradient(rgba(251,191,36,0.03) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(251,191,36,0.03) 1px,transparent 1px);
-  background-size:40px 40px;
+  background-image:url('earth-bg.jpg');
+  background-size:cover;
+  background-position:center top;
+  opacity:0.45;
   pointer-events:none;
+  z-index:0;
 }
-/* Glow orbs */
+/* Dark overlay for readability */
 body::after{
   content:'';
-  position:fixed;
-  width:600px;height:600px;
-  background:radial-gradient(circle,rgba(251,191,36,0.06) 0%,transparent 70%);
-  top:-200px;left:50%;transform:translateX(-50%);
+  position:fixed;inset:0;
+  background:linear-gradient(180deg,rgba(10,12,15,0.55) 0%,rgba(10,12,15,0.85) 55%,rgba(10,12,15,0.97) 100%);
   pointer-events:none;
+  z-index:0;
 }
 
 .login-wrap{
   width:100%;max-width:420px;
-  position:relative;z-index:1;
+  position:relative;z-index:2;
 }
 
 /* Logo */
@@ -81,7 +81,8 @@ body::after{
 
 /* Card */
 .login-card{
-  background:var(--bg2);
+  background:rgba(17,19,24,0.85);
+  backdrop-filter:blur(12px);
   border:1px solid var(--border2);
   border-radius:16px;
   padding:32px 28px;
