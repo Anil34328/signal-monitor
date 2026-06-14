@@ -30,6 +30,9 @@ app.use(session({
   cookie: { maxAge: 24*60*60*1000, httpOnly: true, secure: false }
 }));
 
+// Serve static assets (images etc.) without auth — needed for login page background
+app.use('/earth-bg.jpg', express.static(path.join(__dirname, 'public', 'earth-bg.jpg')));
+
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 function requireAuth(req, res, next) {
   if (req.session && req.session.userId) return next();
