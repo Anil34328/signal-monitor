@@ -28,14 +28,15 @@ body{
   overflow:hidden;
 }
 
-/* Earth background image */
+/* Earth background image — desaturated for premium black/gold palette */
 body::before{
   content:'';
   position:fixed;inset:0;
   background-image:url('earth-bg.jpg');
   background-size:cover;
   background-position:center top;
-  opacity:0.45;
+  opacity:0.18;
+  filter:grayscale(85%) brightness(.6) contrast(1.1);
   pointer-events:none;
   z-index:0;
 }
@@ -43,56 +44,136 @@ body::before{
 body::after{
   content:'';
   position:fixed;inset:0;
-  background:linear-gradient(180deg,rgba(10,12,15,0.55) 0%,rgba(10,12,15,0.85) 55%,rgba(10,12,15,0.97) 100%);
+  background:linear-gradient(180deg,rgba(10,12,15,0.7) 0%,rgba(10,12,15,0.9) 55%,rgba(10,12,15,0.98) 100%);
   pointer-events:none;
   z-index:0;
 }
 
+/* ===== ADDED: Ambient market atmosphere — stars + grid ===== */
+.stars{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    radial-gradient(1px 1px at 5% 12%, rgba(255,255,255,.55), transparent 50%),
+    radial-gradient(1px 1px at 18% 38%, rgba(255,255,255,.35), transparent 50%),
+    radial-gradient(1px 1px at 32% 8%, rgba(255,255,255,.45), transparent 50%),
+    radial-gradient(1px 1px at 48% 62%, rgba(255,255,255,.30), transparent 50%),
+    radial-gradient(1px 1px at 63% 22%, rgba(255,255,255,.45), transparent 50%),
+    radial-gradient(1px 1px at 77% 48%, rgba(255,255,255,.35), transparent 50%),
+    radial-gradient(1px 1px at 88% 15%, rgba(255,255,255,.50), transparent 50%),
+    radial-gradient(1px 1px at 92% 70%, rgba(255,255,255,.25), transparent 50%),
+    radial-gradient(1px 1px at 12% 82%, rgba(255,255,255,.40), transparent 50%),
+    radial-gradient(1px 1px at 40% 90%, rgba(255,255,255,.30), transparent 50%),
+    radial-gradient(1px 1px at 70% 88%, rgba(255,255,255,.35), transparent 50%),
+    radial-gradient(1px 1px at 25% 55%, rgba(255,255,255,.25), transparent 50%),
+    radial-gradient(1px 1px at 55% 30%, rgba(255,255,255,.30), transparent 50%),
+    radial-gradient(1px 1px at 85% 92%, rgba(255,255,255,.35), transparent 50%);
+  background-repeat:no-repeat;
+  background-size:100% 100%;
+}
+.grid-overlay{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size:64px 64px;
+}
+/* ===== END ADDED ===== */
+
 .login-wrap{
-  width:100%;max-width:420px;
+  width:100%;max-width:480px;
   position:relative;z-index:2;
 }
 
-/* Logo */
-.logo-section{
+/* ===== ADDED: Hero section ===== */
+.hero{
   text-align:center;
-  margin-bottom:32px;
+  margin-bottom:18px;
+  position:relative;
+  padding-top:8px;
+}
+.hero-glow{
+  position:absolute;
+  top:-100px;left:50%;
+  transform:translateX(-50%);
+  width:460px;height:460px;
+  background:radial-gradient(circle, rgba(251,191,36,0.20) 0%, rgba(251,191,36,0.06) 40%, transparent 70%);
+  filter:blur(40px);
+  pointer-events:none;
+  z-index:-1;
+  mix-blend-mode:screen;
 }
 .logo-svg-wrap{
   display:flex;justify-content:center;margin-bottom:14px;
+  filter:drop-shadow(0 0 22px rgba(251,191,36,0.35));
 }
-.brand-name{
+.hero-title{
   font-family:var(--font);
-  font-size:36px;font-weight:700;
-  letter-spacing:.06em;
+  font-size:58px;font-weight:700;
+  letter-spacing:.14em;
   background:linear-gradient(135deg,#f6d365 0%,#fbbf24 40%,#d97706 70%,#fbbf24 100%);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
   background-clip:text;
   line-height:1;
-  margin-bottom:6px;
+  margin:6px 0 12px;
 }
-.brand-tagline{
-  font-size:11px;letter-spacing:.24em;text-transform:uppercase;
-  color:#a07a20;font-family:var(--mono);
+.hero-tagline{
+  font-size:12px;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--gold);font-family:var(--mono);font-weight:600;
+  margin-bottom:8px;
 }
-.brand-sub{
-  font-size:11px;color:var(--muted);margin-top:6px;
+.hero-sub{
+  font-size:13px;color:var(--muted);letter-spacing:.02em;
 }
 
-/* Card */
+/* ===== ADDED: Status bar ===== */
+.status-bar{
+  display:flex;align-items:center;justify-content:center;
+  gap:10px;flex-wrap:wrap;
+  font-size:10.5px;color:var(--muted);
+  letter-spacing:.08em;text-transform:uppercase;
+  margin:24px 0 26px;
+  padding:11px 18px;
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:30px;
+  background:rgba(255,255,255,.02);
+  backdrop-filter:blur(6px);
+}
+.status-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--green);box-shadow:0 0 8px var(--green);
+  animation:pulse 1.5s infinite;
+  flex-shrink:0;
+}
+.status-sep{color:rgba(255,255,255,.14);}
+.status-active{color:var(--green);font-weight:600;}
+.status-bar strong{color:var(--text);font-weight:600;}
+/* ===== END ADDED ===== */
+
+/* Card — premium glassmorphism */
 .login-card{
-  background:rgba(17,19,24,0.85);
-  backdrop-filter:blur(12px);
-  border:1px solid var(--border2);
-  border-radius:16px;
-  padding:32px 28px;
-  box-shadow:0 24px 64px rgba(0,0,0,0.5),0 0 0 1px rgba(251,191,36,0.08);
+  background:linear-gradient(135deg,rgba(28,30,38,0.65),rgba(15,17,22,0.78));
+  backdrop-filter:blur(28px) saturate(150%);
+  -webkit-backdrop-filter:blur(28px) saturate(150%);
+  border:1px solid rgba(251,191,36,0.16);
+  border-radius:22px;
+  padding:40px 36px;
+  box-shadow:
+    0 32px 90px rgba(0,0,0,0.65),
+    0 0 0 1px rgba(255,255,255,0.03) inset,
+    0 0 60px rgba(251,191,36,0.06);
   position:relative;overflow:hidden;
 }
 .login-card::before{
   content:'';
   position:absolute;top:0;left:0;right:0;height:2px;
   background:linear-gradient(90deg,transparent,var(--gold),transparent);
+}
+.login-card::after{
+  content:'';
+  position:absolute;inset:0;
+  border-radius:22px;
+  background:radial-gradient(ellipse at top, rgba(251,191,36,0.07), transparent 60%);
+  pointer-events:none;
 }
 
 .card-title{
@@ -206,8 +287,10 @@ body::after{
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
 
 @media(max-width:480px){
-  .login-card{padding:24px 20px;}
-  .brand-name{font-size:30px;}
+  .login-card{padding:28px 22px;}
+  .hero-title{font-size:42px;letter-spacing:.10em;}
+  .hero-tagline{font-size:10px;letter-spacing:.26em;}
+  .status-bar{font-size:9.5px;gap:7px;padding:9px 12px;}
 }
 
 /* ===== ADDED: Candlestick Background Animation System - START ===== */
@@ -246,26 +329,41 @@ body::after{
 .candle.green{ color:var(--green); }
 .candle.red{ color:var(--red); }
 
+/* ===== ADDED: Candle depth layers ===== */
+.candle.depth-back{
+  filter:blur(1.6px);
+}
+.candle.depth-back .candle-body{
+  box-shadow:0 0 4px currentColor;
+}
+.candle.depth-mid .candle-body{
+  box-shadow:0 0 8px currentColor,0 0 18px currentColor;
+}
+.candle.depth-front .candle-body{
+  box-shadow:0 0 12px currentColor,0 0 28px currentColor;
+}
+/* ===== END ADDED ===== */
+
 @keyframes candleRise{
   0%   { transform:translateY(0) scale(.9);     opacity:0; }
-  12%  { opacity:.9; }
-  85%  { opacity:.7; }
+  12%  { opacity:var(--peak-opacity, .9); }
+  85%  { opacity:calc(var(--peak-opacity, .9) * 0.78); }
   100% { transform:translateY(-115vh) scale(1); opacity:0; }
 }
 @keyframes candleFall{
   0%   { transform:translateY(0) scale(.9);     opacity:0; }
-  12%  { opacity:.9; }
-  85%  { opacity:.7; }
+  12%  { opacity:var(--peak-opacity, .9); }
+  85%  { opacity:calc(var(--peak-opacity, .9) * 0.78); }
   100% { transform:translateY(115vh) scale(1);  opacity:0; }
 }
 @keyframes candleReverseUp{
   0%   { transform:translateY(0) scale(.7);    opacity:0; }
-  25%  { opacity:.8; }
+  25%  { opacity:var(--peak-opacity, .8); }
   100% { transform:translateY(-35vh) scale(.5); opacity:0; }
 }
 @keyframes candleReverseDown{
   0%   { transform:translateY(0) scale(.7);    opacity:0; }
-  25%  { opacity:.8; }
+  25%  { opacity:var(--peak-opacity, .8); }
   100% { transform:translateY(35vh) scale(.5);  opacity:0; }
 }
 .candle.rise{ bottom:-90px; animation-name:candleRise; }
@@ -277,14 +375,20 @@ body::after{
 </head>
 <body>
 
+<!-- ===== ADDED: Ambient market atmosphere layers - START ===== -->
+<div class="stars" aria-hidden="true"></div>
+<div class="grid-overlay" aria-hidden="true"></div>
+<!-- ===== ADDED: Ambient market atmosphere layers - END ===== -->
+
 <!-- ===== ADDED: Candlestick animation stage - START ===== -->
 <div class="candle-stage" id="candleStage" aria-hidden="true"></div>
 <!-- ===== ADDED: Candlestick animation stage - END ===== -->
 
 <div class="login-wrap">
 
-  <!-- Logo -->
-  <div class="logo-section">
+  <!-- ===== ADDED: Hero section - START ===== -->
+  <div class="hero">
+    <div class="hero-glow" aria-hidden="true"></div>
     <div class="logo-svg-wrap">
       <svg width="80" height="80" viewBox="0 0 62 62" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -321,10 +425,24 @@ body::after{
       </svg>
     </div>
     <div class="live-badge"><span class="live-dot"></span> Live Signals</div>
-    <div class="brand-name">Dhitta</div>
-    <div class="brand-tagline">&#x2014; Trading Signals &#x2014;</div>
-    <div class="brand-sub">EUR/USD &middot; GBP/USD &middot; XAU/USD &middot; USD/JPY &middot; India &#127470;&#127475;</div>
+    <h1 class="hero-title">DHITTA</h1>
+    <div class="hero-tagline">AI-Powered Market Intelligence</div>
+    <div class="hero-sub">Detect opportunities before the crowd.</div>
   </div>
+  <!-- ===== ADDED: Hero section - END ===== -->
+
+  <!-- ===== ADDED: Status bar - START ===== -->
+  <div class="status-bar">
+    <span class="status-dot"></span>
+    <span>Live Market Intelligence</span>
+    <span class="status-sep">|</span>
+    <span>Markets Monitored: <strong>24</strong></span>
+    <span class="status-sep">|</span>
+    <span>AI Accuracy: <strong>87%</strong></span>
+    <span class="status-sep">|</span>
+    <span>Status: <span class="status-active">Active</span></span>
+  </div>
+  <!-- ===== ADDED: Status bar - END ===== -->
 
   <!-- Login Card -->
   <div class="login-card">
@@ -437,27 +555,53 @@ document.addEventListener('keydown', e => {
 
   function rand(min, max){ return Math.random() * (max - min) + min; }
 
+  // ===== ADDED: Depth system for visual layering =====
+  function randomDepth(){
+    const r = Math.random();
+    if (r < 0.35) return 'back';
+    if (r < 0.82) return 'mid';
+    return 'front';
+  }
+  const DEPTH_SETTINGS = {
+    back:  { sizeRange:[0.45, 0.75], peakOpacity:0.30 },
+    mid:   { sizeRange:[0.85, 1.2],  peakOpacity:0.75 },
+    front: { sizeRange:[1.2, 1.7],   peakOpacity:0.95 },
+  };
+  // ===== END ADDED =====
+
   function spawnCandle(opts){
     if (activeCount >= MAX_CANDLES) return;
-    const { color, dir, sizeScale = 1, durationRange = [2, 4] } = opts;
+    const { color, dir, sizeScale = 1, durationRange = [2, 4], depth = null } = opts;
 
     const candle = document.createElement('div');
-    candle.className = `candle ${color} ${dir}`;
+    let depthClass = '';
+    let finalSizeScale = sizeScale;
+    let peakOpacity = 0.9;
 
-    const bodyHeight  = rand(28, 70) * sizeScale;
-    const bodyWidth   = rand(6, 12) * sizeScale;
-    const wickTop     = rand(6, 16) * sizeScale;
-    const wickBottom  = rand(6, 16) * sizeScale;
+    if (depth){
+      const d = DEPTH_SETTINGS[depth];
+      depthClass = ` depth-${depth}`;
+      finalSizeScale = sizeScale * rand(d.sizeRange[0], d.sizeRange[1]);
+      peakOpacity = d.peakOpacity;
+    }
+
+    candle.className = `candle ${color} ${dir}${depthClass}`;
+    candle.style.setProperty('--peak-opacity', peakOpacity);
+
+    const bodyHeight  = rand(28, 70) * finalSizeScale;
+    const bodyWidth   = rand(6, 12) * finalSizeScale;
+    const wickTop     = rand(6, 16) * finalSizeScale;
+    const wickBottom  = rand(6, 16) * finalSizeScale;
     const totalHeight = bodyHeight + wickTop + wickBottom;
 
     candle.style.width  = bodyWidth + 'px';
     candle.style.height = totalHeight + 'px';
 
-    // Keep candles mostly clear of the centered login form
+    // Keep candles flowing around the centered login card, not over it
     let leftPercent;
     do {
       leftPercent = rand(1, 99);
-    } while (leftPercent > 26 && leftPercent < 74 && Math.random() < 0.75);
+    } while (leftPercent > 24 && leftPercent < 76 && Math.random() < 0.88);
     candle.style.left = leftPercent + 'vw';
 
     const duration = rand(durationRange[0], durationRange[1]);
@@ -485,14 +629,14 @@ document.addEventListener('keydown', e => {
     });
   }
 
-  // 1-3 candles per keystroke, random green(up) / red(down)
+  // 1-3 candles per keystroke, random green(up) / red(down), with depth variety
   function spawnTypingCandles(){
     const count = Math.floor(rand(1, 4)); // 1,2 or 3
     for (let i = 0; i < count; i++){
       if (Math.random() < 0.5){
-        spawnCandle({ color:'green', dir:'rise' });
+        spawnCandle({ color:'green', dir:'rise', depth:randomDepth() });
       } else {
-        spawnCandle({ color:'red', dir:'fall' });
+        spawnCandle({ color:'red', dir:'fall', depth:randomDepth() });
       }
     }
   }
@@ -500,23 +644,36 @@ document.addEventListener('keydown', e => {
   // Small reversal effect on backspace
   function spawnBackspaceEffect(){
     if (Math.random() < 0.5){
-      spawnCandle({ color:'red', dir:'reverse-up', sizeScale:0.6, durationRange:[1,1.6] });
+      spawnCandle({ color:'red', dir:'reverse-up', sizeScale:0.6, durationRange:[1,1.6], depth:'mid' });
     } else {
-      spawnCandle({ color:'green', dir:'reverse-down', sizeScale:0.6, durationRange:[1,1.6] });
+      spawnCandle({ color:'green', dir:'reverse-down', sizeScale:0.6, durationRange:[1,1.6], depth:'mid' });
     }
   }
 
-  // Larger burst on Enter
+  // Larger burst on Enter — mix of depths for a rich market-open feel
   function spawnEnterBurst(){
     const count = Math.floor(rand(8, 13));
     for (let i = 0; i < count; i++){
       if (Math.random() < 0.5){
-        spawnCandle({ color:'green', dir:'rise', sizeScale:rand(0.9,1.3) });
+        spawnCandle({ color:'green', dir:'rise', sizeScale:rand(0.9,1.3), depth:randomDepth() });
       } else {
-        spawnCandle({ color:'red', dir:'fall', sizeScale:rand(0.9,1.3) });
+        spawnCandle({ color:'red', dir:'fall', sizeScale:rand(0.9,1.3), depth:randomDepth() });
       }
     }
   }
+
+  // ===== ADDED: Subtle ambient market atmosphere (idle drift) =====
+  function spawnAmbientCandle(){
+    if (Math.random() < 0.5){
+      spawnCandle({ color:'green', dir:'rise', sizeScale:0.8, durationRange:[3,5], depth:'back' });
+    } else {
+      spawnCandle({ color:'red', dir:'fall', sizeScale:0.8, durationRange:[3,5], depth:'back' });
+    }
+  }
+  setInterval(() => {
+    if (activeCount < MAX_CANDLES - 2) spawnAmbientCandle();
+  }, 2800);
+  // ===== END ADDED =====
 
   const usernameInput = document.getElementById('username');
   const passwordInput = document.getElementById('password');
