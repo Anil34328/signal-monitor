@@ -8,399 +8,290 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0a0c0f;--bg2:#111318;--bg3:#181c22;
-  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);
-  --text:#e8eaf0;--muted:#6b7280;
-  --gold:#fbbf24;--gold2:#f59e0b;--gold3:#92400e;
+  --bg:#07090c;--bg2:#0e1015;--bg3:#151820;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);
+  --text:#e8eaf0;--muted:#5a6275;
+  --gold:#fbbf24;--gold2:#f59e0b;--gold3:#92400e;--gold-pale:#fde68a;
   --green:#22c55e;--red:#ef4444;
   --font:'Syne',sans-serif;--mono:'DM Mono',monospace;
 }
+*{box-sizing:border-box;margin:0;padding:0}
 body{
-  background:var(--bg);
-  color:var(--text);
-  font-family:var(--mono);
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-  position:relative;
-  overflow:hidden;
+  background:var(--bg);color:var(--text);font-family:var(--mono);
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:20px;position:relative;overflow:hidden;
 }
-
-/* Earth background image — desaturated for premium black/gold palette */
-body::before{
-  content:'';
-  position:fixed;inset:0;
-  background-image:url('earth-bg.jpg');
-  background-size:cover;
-  background-position:center top;
-  opacity:0.18;
-  filter:grayscale(85%) brightness(.6) contrast(1.1);
-  pointer-events:none;
-  z-index:0;
-}
-/* Dark overlay for readability */
-body::after{
-  content:'';
-  position:fixed;inset:0;
-  background:linear-gradient(180deg,rgba(10,12,15,0.7) 0%,rgba(10,12,15,0.9) 55%,rgba(10,12,15,0.98) 100%);
-  pointer-events:none;
-  z-index:0;
-}
-
-/* ===== ADDED: Ambient market atmosphere — stars + grid ===== */
-.stars{
-  position:fixed;inset:0;z-index:0;pointer-events:none;
+.bg-earth{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:url('earth-bg.jpg');background-size:cover;background-position:center top;
+  opacity:0.10;filter:grayscale(90%) brightness(.5) contrast(1.1);}
+.bg-vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse 80% 80% at 50% 0%,rgba(7,9,12,0) 0%,rgba(7,9,12,0.92) 100%),
+    linear-gradient(180deg,rgba(7,9,12,0.55) 0%,rgba(7,9,12,0.88) 55%,rgba(7,9,12,0.98) 100%);}
+.bg-stars{position:fixed;inset:0;z-index:2;pointer-events:none;
   background-image:
-    radial-gradient(1px 1px at 5% 12%, rgba(255,255,255,.55), transparent 50%),
-    radial-gradient(1px 1px at 18% 38%, rgba(255,255,255,.35), transparent 50%),
-    radial-gradient(1px 1px at 32% 8%, rgba(255,255,255,.45), transparent 50%),
-    radial-gradient(1px 1px at 48% 62%, rgba(255,255,255,.30), transparent 50%),
-    radial-gradient(1px 1px at 63% 22%, rgba(255,255,255,.45), transparent 50%),
-    radial-gradient(1px 1px at 77% 48%, rgba(255,255,255,.35), transparent 50%),
-    radial-gradient(1px 1px at 88% 15%, rgba(255,255,255,.50), transparent 50%),
-    radial-gradient(1px 1px at 92% 70%, rgba(255,255,255,.25), transparent 50%),
-    radial-gradient(1px 1px at 12% 82%, rgba(255,255,255,.40), transparent 50%),
-    radial-gradient(1px 1px at 40% 90%, rgba(255,255,255,.30), transparent 50%),
-    radial-gradient(1px 1px at 70% 88%, rgba(255,255,255,.35), transparent 50%),
-    radial-gradient(1px 1px at 25% 55%, rgba(255,255,255,.25), transparent 50%),
-    radial-gradient(1px 1px at 55% 30%, rgba(255,255,255,.30), transparent 50%),
-    radial-gradient(1px 1px at 85% 92%, rgba(255,255,255,.35), transparent 50%);
-  background-repeat:no-repeat;
-  background-size:100% 100%;
-}
-.grid-overlay{
-  position:fixed;inset:0;z-index:0;pointer-events:none;
-  background-image:
-    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
-  background-size:64px 64px;
-}
-/* ===== END ADDED ===== */
+    radial-gradient(1px 1px at 5% 10%,rgba(255,255,255,.50),transparent),
+    radial-gradient(1px 1px at 15% 38%,rgba(255,255,255,.28),transparent),
+    radial-gradient(1px 1px at 28% 7%,rgba(255,255,255,.42),transparent),
+    radial-gradient(1px 1px at 43% 60%,rgba(255,255,255,.26),transparent),
+    radial-gradient(1px 1px at 60% 20%,rgba(255,255,255,.38),transparent),
+    radial-gradient(1px 1px at 72% 45%,rgba(255,255,255,.30),transparent),
+    radial-gradient(1px 1px at 85% 12%,rgba(255,255,255,.44),transparent),
+    radial-gradient(1px 1px at 91% 68%,rgba(255,255,255,.20),transparent),
+    radial-gradient(1px 1px at 10% 80%,rgba(255,255,255,.34),transparent),
+    radial-gradient(1px 1px at 38% 88%,rgba(255,255,255,.24),transparent),
+    radial-gradient(1px 1px at 67% 85%,rgba(255,255,255,.28),transparent),
+    radial-gradient(1px 1px at 22% 52%,rgba(255,255,255,.18),transparent),
+    radial-gradient(1px 1px at 53% 28%,rgba(255,255,255,.24),transparent),
+    radial-gradient(1px 1px at 82% 90%,rgba(255,255,255,.30),transparent),
+    radial-gradient(1.5px 1.5px at 48% 4%,rgba(251,191,36,.20),transparent),
+    radial-gradient(1.5px 1.5px at 75% 35%,rgba(251,191,36,.14),transparent);
+  background-repeat:no-repeat;background-size:100% 100%;}
+.bg-grid{position:fixed;inset:0;z-index:3;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.016) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.016) 1px,transparent 1px);
+  background-size:56px 56px;}
+.bg-ambient{position:fixed;top:-200px;left:50%;transform:translateX(-50%);
+  width:720px;height:720px;z-index:4;pointer-events:none;
+  background:radial-gradient(circle,rgba(251,191,36,0.09) 0%,rgba(251,191,36,0.028) 40%,transparent 70%);
+  filter:blur(65px);animation:ambientPulse 9s ease-in-out infinite;}
+@keyframes ambientPulse{
+  0%,100%{opacity:.75;transform:translateX(-50%) scale(1)}
+  50%{opacity:1;transform:translateX(-50%) scale(1.07)}}
+.bg-chart{position:fixed;bottom:0;left:0;right:0;z-index:5;pointer-events:none;}
+.candle-stage{position:fixed;inset:0;z-index:6;pointer-events:none;overflow:hidden;}
 
-.login-wrap{
-  width:100%;max-width:480px;
-  position:relative;z-index:2;
-}
+/* TICKER */
+.ticker-wrap{position:fixed;bottom:0;left:0;right:0;z-index:20;height:34px;
+  background:linear-gradient(90deg,rgba(7,9,12,0.94),rgba(14,16,21,0.97),rgba(7,9,12,0.94));
+  border-top:1px solid rgba(251,191,36,0.09);overflow:hidden;display:flex;align-items:center;}
+.ticker-label{flex-shrink:0;padding:0 14px;font-size:9px;letter-spacing:.20em;text-transform:uppercase;
+  color:var(--gold);font-weight:600;border-right:1px solid rgba(251,191,36,0.14);
+  height:100%;display:flex;align-items:center;background:rgba(251,191,36,0.04);}
+.ticker-track{flex:1;overflow:hidden;position:relative;}
+.ticker-inner{display:flex;animation:tickerScroll 40s linear infinite;white-space:nowrap;will-change:transform;}
+.ticker-inner:hover{animation-play-state:paused;}
+.ticker-item{display:inline-flex;align-items:center;gap:6px;padding:0 22px;
+  font-size:11px;font-family:var(--mono);border-right:1px solid rgba(255,255,255,.04);height:34px;}
+.ticker-sym{color:rgba(255,255,255,.7);font-weight:500;letter-spacing:.03em;}
+.ticker-price{color:var(--muted);font-size:10px;}
+.ticker-up{color:#34d399;font-size:10px;}
+.ticker-dn{color:#f87171;font-size:10px;}
+@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
-/* ===== ADDED: Hero section ===== */
-.hero{
-  text-align:center;
-  margin-bottom:18px;
-  position:relative;
-  padding-top:8px;
-}
-.hero-glow{
-  position:absolute;
-  top:-100px;left:50%;
-  transform:translateX(-50%);
-  width:460px;height:460px;
-  background:radial-gradient(circle, rgba(251,191,36,0.20) 0%, rgba(251,191,36,0.06) 40%, transparent 70%);
-  filter:blur(40px);
-  pointer-events:none;
-  z-index:-1;
-  mix-blend-mode:screen;
-}
-.logo-svg-wrap{
-  display:flex;justify-content:center;margin-bottom:14px;
-  filter:drop-shadow(0 0 22px rgba(251,191,36,0.35));
-}
-.hero-title{
-  font-family:var(--font);
-  font-size:58px;font-weight:700;
-  letter-spacing:.14em;
-  background:linear-gradient(135deg,#f6d365 0%,#fbbf24 40%,#d97706 70%,#fbbf24 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;
-  line-height:1;
-  margin:6px 0 12px;
-}
-.hero-tagline{
-  font-size:12px;letter-spacing:.34em;text-transform:uppercase;
-  color:var(--gold);font-family:var(--mono);font-weight:600;
-  margin-bottom:8px;
-}
-.hero-sub{
-  font-size:13px;color:var(--muted);letter-spacing:.02em;
-}
+/* WRAP */
+.login-wrap{width:100%;max-width:460px;position:relative;z-index:10;
+  animation:wrapFloat 7s ease-in-out infinite;}
+@keyframes wrapFloat{0%,100%{transform:translateY(0px)}50%{transform:translateY(-5px)}}
 
-/* ===== ADDED: Status bar ===== */
-.status-bar{
-  display:flex;align-items:center;justify-content:center;
-  gap:10px;flex-wrap:wrap;
-  font-size:10.5px;color:var(--muted);
-  letter-spacing:.08em;text-transform:uppercase;
-  margin:24px 0 26px;
-  padding:11px 18px;
-  border:1px solid rgba(255,255,255,.06);
-  border-radius:30px;
-  background:rgba(255,255,255,.02);
-  backdrop-filter:blur(6px);
-}
-.status-dot{
-  width:6px;height:6px;border-radius:50%;
-  background:var(--green);box-shadow:0 0 8px var(--green);
-  animation:pulse 1.5s infinite;
-  flex-shrink:0;
-}
-.status-sep{color:rgba(255,255,255,.14);}
+/* HERO */
+.hero{text-align:center;margin-bottom:22px;position:relative;padding-top:4px;}
+.hero-glow{position:absolute;top:-140px;left:50%;transform:translateX(-50%);
+  width:520px;height:520px;z-index:-1;pointer-events:none;
+  background:radial-gradient(circle,rgba(251,191,36,0.17) 0%,rgba(251,191,36,0.05) 44%,transparent 70%);
+  filter:blur(52px);animation:ambientPulse 9s ease-in-out infinite;}
+.logo-svg-wrap{display:flex;justify-content:center;margin-bottom:12px;
+  filter:drop-shadow(0 0 16px rgba(251,191,36,.42)) drop-shadow(0 0 38px rgba(251,191,36,.18));
+  animation:logoGlow 9s ease-in-out infinite;}
+@keyframes logoGlow{
+  0%,100%{filter:drop-shadow(0 0 16px rgba(251,191,36,.42)) drop-shadow(0 0 38px rgba(251,191,36,.18))}
+  50%{filter:drop-shadow(0 0 24px rgba(251,191,36,.58)) drop-shadow(0 0 54px rgba(251,191,36,.26))}}
+.live-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;color:var(--green);
+  background:#22c55e0e;border:1px solid #22c55e26;border-radius:20px;padding:3px 10px;margin-bottom:10px;letter-spacing:.04em;}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 1.6s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.18}}
+.hero-title-wrap{position:relative;display:inline-block;}
+.hero-title{font-family:var(--font);font-size:60px;font-weight:700;letter-spacing:.16em;
+  background:linear-gradient(150deg,#fde68a 0%,#fbbf24 32%,#f59e0b 55%,#d97706 72%,#fbbf24 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  line-height:1;margin:4px 0 12px;}
+.hero-title-wrap::after{content:'DHITTA';position:absolute;inset:0;
+  font-family:var(--font);font-size:60px;font-weight:700;letter-spacing:.16em;line-height:1;
+  color:var(--gold);filter:blur(24px);opacity:0.20;pointer-events:none;z-index:-1;}
+.hero-tagline{font-size:11.5px;letter-spacing:.30em;text-transform:uppercase;
+  color:var(--gold);font-family:var(--mono);font-weight:500;margin-bottom:7px;opacity:.82;}
+.hero-sub{font-size:13px;color:var(--muted);letter-spacing:.03em;}
+
+/* STATUS BAR */
+.status-bar{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
+  font-size:10px;color:var(--muted);letter-spacing:.09em;text-transform:uppercase;
+  margin:20px 0 22px;padding:10px 18px;border:1px solid rgba(255,255,255,.046);
+  border-radius:30px;background:rgba(255,255,255,.016);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 8px var(--green);animation:pulse 1.6s infinite;flex-shrink:0;}
+.status-sep{color:rgba(255,255,255,.09);}
 .status-active{color:var(--green);font-weight:600;}
-.status-bar strong{color:var(--text);font-weight:600;}
-/* ===== END ADDED ===== */
+.status-bar strong{color:rgba(255,255,255,.62);font-weight:600;}
 
-/* Card — premium glassmorphism */
+/* CARD */
 .login-card{
-  background:linear-gradient(135deg,rgba(28,30,38,0.65),rgba(15,17,22,0.78));
-  backdrop-filter:blur(28px) saturate(150%);
-  -webkit-backdrop-filter:blur(28px) saturate(150%);
-  border:1px solid rgba(251,191,36,0.16);
-  border-radius:22px;
-  padding:40px 36px;
-  box-shadow:
-    0 32px 90px rgba(0,0,0,0.65),
-    0 0 0 1px rgba(255,255,255,0.03) inset,
-    0 0 60px rgba(251,191,36,0.06);
-  position:relative;overflow:hidden;
-}
-.login-card::before{
-  content:'';
-  position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,transparent,var(--gold),transparent);
-}
-.login-card::after{
-  content:'';
-  position:absolute;inset:0;
-  border-radius:22px;
-  background:radial-gradient(ellipse at top, rgba(251,191,36,0.07), transparent 60%);
-  pointer-events:none;
-}
+  background:linear-gradient(148deg,rgba(22,24,33,0.74) 0%,rgba(10,12,18,0.87) 100%);
+  backdrop-filter:blur(40px) saturate(165%);-webkit-backdrop-filter:blur(40px) saturate(165%);
+  border:1px solid rgba(251,191,36,0.11);border-radius:24px;
+  padding:40px 38px 36px;
+  box-shadow:0 2px 0 0 rgba(251,191,36,0.16) inset,
+    0 44px 110px rgba(0,0,0,0.72),
+    0 0 0 1px rgba(255,255,255,0.022) inset,
+    0 0 90px rgba(251,191,36,0.045);
+  position:relative;overflow:hidden;}
+.login-card::before{content:'';position:absolute;top:0;left:12%;right:12%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(251,191,36,.50),rgba(251,191,36,.80),rgba(251,191,36,.50),transparent);}
+.login-card::after{content:'';position:absolute;inset:0;border-radius:24px;
+  background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(251,191,36,0.062),transparent 60%);pointer-events:none;}
+.card-title{font-family:var(--font);font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;letter-spacing:.01em;}
+.card-sub{font-size:12px;color:var(--muted);margin-bottom:26px;letter-spacing:.02em;}
 
-.card-title{
-  font-family:var(--font);font-size:15px;font-weight:600;
-  color:var(--text);margin-bottom:4px;
-}
-.card-sub{
-  font-size:12px;color:var(--muted);margin-bottom:24px;
-}
-
-/* Form */
-.field{margin-bottom:16px;}
-.field label{
-  display:block;font-size:11px;color:var(--muted);
-  text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px;
-}
-.field input{
-  width:100%;
-  background:var(--bg3);
-  border:1px solid var(--border2);
-  color:var(--text);
-  font-family:var(--mono);font-size:14px;
-  padding:12px 14px;
-  border-radius:8px;
-  outline:none;
-  transition:border-color .2s,box-shadow .2s;
-}
-.field input:focus{
-  border-color:var(--gold);
-  box-shadow:0 0 0 3px rgba(251,191,36,0.1);
-}
-.field input::placeholder{color:#374151;}
-
-/* Password toggle */
+/* FORM */
+.field{margin-bottom:18px;}
+.field label{display:block;font-size:10.5px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.09em;margin-bottom:8px;}
+.field input{width:100%;background:rgba(9,11,17,0.72);border:1px solid rgba(255,255,255,0.085);
+  color:var(--text);font-family:var(--mono);font-size:14px;padding:13px 15px;
+  border-radius:10px;outline:none;transition:border-color .22s,box-shadow .22s,background .22s;letter-spacing:.02em;}
+.field input:focus{border-color:rgba(251,191,36,0.42);background:rgba(13,15,22,0.82);
+  box-shadow:0 0 0 3px rgba(251,191,36,0.075),0 0 22px rgba(251,191,36,0.055);}
+.field input::placeholder{color:#252b38;}
 .pw-wrap{position:relative;}
-.pw-wrap input{padding-right:44px;}
-.pw-toggle{
-  position:absolute;right:12px;top:50%;transform:translateY(-50%);
-  background:none;border:none;cursor:pointer;
-  color:var(--muted);font-size:16px;padding:4px;
-  transition:color .2s;
-}
+.pw-wrap input{padding-right:46px;}
+.pw-toggle{position:absolute;right:13px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;color:var(--muted);font-size:15px;padding:4px;
+  transition:color .18s;line-height:1;}
 .pw-toggle:hover{color:var(--gold);}
 
-/* Submit button */
-.login-btn{
-  width:100%;
-  background:linear-gradient(135deg,var(--gold2),var(--gold));
-  color:#000;
-  font-family:var(--font);font-size:15px;font-weight:700;
-  padding:13px;
-  border:none;border-radius:8px;
-  cursor:pointer;
-  transition:all .2s;
-  letter-spacing:.04em;
-  margin-top:6px;
-  position:relative;overflow:hidden;
-}
-.login-btn::after{
-  content:'';
-  position:absolute;inset:0;
-  background:linear-gradient(135deg,rgba(255,255,255,0.15),transparent);
-  opacity:0;transition:opacity .2s;
-}
-.login-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(251,191,36,0.35);}
-.login-btn:hover::after{opacity:1;}
-.login-btn:active{transform:translateY(0);}
+/* BUTTON */
+.login-btn{width:100%;
+  background:linear-gradient(135deg,#f59e0b 0%,#fbbf24 50%,#f59e0b 100%);
+  background-size:200% 100%;color:#000;
+  font-family:var(--font);font-size:14px;font-weight:700;
+  padding:14px;border:none;border-radius:10px;cursor:pointer;
+  transition:all .25s;letter-spacing:.06em;margin-top:8px;
+  position:relative;overflow:hidden;text-transform:uppercase;}
+.login-btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.20),transparent);transition:left .5s;}
+.login-btn:hover::before{left:100%;}
+.login-btn:hover{transform:translateY(-1.5px);
+  box-shadow:0 10px 32px rgba(251,191,36,0.40),0 4px 14px rgba(251,191,36,0.22);}
+.login-btn:active{transform:translateY(0);box-shadow:none;}
 
-/* Error */
-.error-box{
-  background:#ef444415;border:1px solid #ef444440;
-  border-radius:8px;padding:10px 14px;
-  font-size:12px;color:var(--red);
-  margin-bottom:16px;
-  display:flex;align-items:center;gap:8px;
-}
+/* ERROR */
+.error-box{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.26);
+  border-radius:9px;padding:10px 14px;font-size:12px;color:#fca5a5;
+  margin-bottom:18px;display:flex;align-items:center;gap:8px;backdrop-filter:blur(8px);}
 
-/* Divider */
-.divider{
-  border:none;border-top:1px solid var(--border);
-  margin:20px 0;
-}
+/* DIVIDER */
+.divider{border:none;border-top:1px solid rgba(255,255,255,.045);margin:22px 0;}
+.card-footer-info{font-size:11px;color:var(--muted);text-align:center;line-height:1.9;}
+.card-footer-info strong{color:rgba(255,255,255,.42);}
 
-/* Footer */
-.login-footer{
-  text-align:center;margin-top:20px;
-  font-size:11px;color:var(--muted);line-height:1.7;
-}
-.login-footer strong{color:var(--text);}
-
-/* Loader */
-.login-btn.loading{
-  pointer-events:none;opacity:.8;
-}
-.spinner{
-  display:inline-block;width:14px;height:14px;
-  border:2px solid rgba(0,0,0,0.3);border-top-color:#000;
-  border-radius:50%;animation:spin .7s linear infinite;
-  vertical-align:middle;margin-right:6px;
-}
+/* LOADER */
+.login-btn.loading{pointer-events:none;opacity:.75;}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(0,0,0,0.25);
+  border-top-color:#000;border-radius:50%;animation:spin .65s linear infinite;
+  vertical-align:middle;margin-right:7px;}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* Live pulse */
-.live-badge{
-  display:inline-flex;align-items:center;gap:5px;
-  font-size:10px;color:var(--green);
-  background:#22c55e12;border:1px solid #22c55e30;
-  border-radius:20px;padding:3px 9px;margin-bottom:10px;
-}
-.live-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+/* PAGE FOOTER */
+.login-footer{text-align:center;margin-top:22px;margin-bottom:46px;
+  font-size:10.5px;color:rgba(255,255,255,.14);line-height:1.7;letter-spacing:.04em;}
+.login-footer strong{color:rgba(255,255,255,.26);}
+
+/* CANDLESTICKS */
+.candle{position:absolute;pointer-events:none;will-change:transform,opacity;
+  opacity:0;animation-fill-mode:forwards;animation-timing-function:ease-out;}
+.candle .candle-wick{position:absolute;left:50%;top:0;transform:translateX(-50%);
+  width:1.5px;background:currentColor;opacity:.42;}
+.candle .candle-body{position:absolute;left:0;width:100%;border-radius:2px;background:currentColor;}
+.candle.green{color:var(--green);}
+.candle.red{color:var(--red);}
+.candle.depth-back{filter:blur(2px);}
+.candle.depth-back .candle-body{box-shadow:0 0 4px currentColor;opacity:.68;}
+.candle.depth-mid .candle-body{box-shadow:0 0 8px currentColor,0 0 20px currentColor;}
+.candle.depth-front .candle-body{box-shadow:0 0 10px currentColor,0 0 28px currentColor,0 0 52px currentColor;}
+.candle.green.depth-front .candle-body{box-shadow:0 0 10px #22c55e,0 0 26px rgba(34,197,94,.52),0 0 52px rgba(34,197,94,.22);}
+.candle.red.depth-front .candle-body{box-shadow:0 0 10px #ef4444,0 0 26px rgba(239,68,68,.52),0 0 52px rgba(239,68,68,.22);}
+@keyframes candleRise{
+  0%{transform:translateY(0) scale(.88);opacity:0;}
+  10%{opacity:var(--peak-opacity,.9);}
+  88%{opacity:calc(var(--peak-opacity,.9)*.72);}
+  100%{transform:translateY(-118vh) scale(1.02);opacity:0;}}
+@keyframes candleFall{
+  0%{transform:translateY(0) scale(.88);opacity:0;}
+  10%{opacity:var(--peak-opacity,.9);}
+  88%{opacity:calc(var(--peak-opacity,.9)*.72);}
+  100%{transform:translateY(118vh) scale(1.02);opacity:0;}}
+@keyframes candleReverseUp{
+  0%{transform:translateY(0) scale(.65);opacity:0;}
+  22%{opacity:var(--peak-opacity,.8);}
+  100%{transform:translateY(-38vh) scale(.45);opacity:0;}}
+@keyframes candleReverseDown{
+  0%{transform:translateY(0) scale(.65);opacity:0;}
+  22%{opacity:var(--peak-opacity,.8);}
+  100%{transform:translateY(38vh) scale(.45);opacity:0;}}
+.candle.rise{bottom:-90px;animation-name:candleRise;}
+.candle.fall{top:-90px;animation-name:candleFall;}
+.candle.reverse-up{bottom:-70px;animation-name:candleReverseUp;}
+.candle.reverse-down{top:-70px;animation-name:candleReverseDown;}
 
 @media(max-width:480px){
-  .login-card{padding:28px 22px;}
-  .hero-title{font-size:42px;letter-spacing:.10em;}
-  .hero-tagline{font-size:10px;letter-spacing:.26em;}
-  .status-bar{font-size:9.5px;gap:7px;padding:9px 12px;}
+  .login-card{padding:28px 22px 26px;}
+  .hero-title{font-size:44px;letter-spacing:.12em;}
+  .hero-title-wrap::after{font-size:44px;letter-spacing:.12em;}
+  .hero-tagline{font-size:9.5px;letter-spacing:.22em;}
+  .status-bar{font-size:9px;gap:6px;padding:8px 12px;}
+  .ticker-wrap{display:none;}
 }
-
-/* ===== ADDED: Candlestick Background Animation System - START ===== */
-.candle-stage{
-  position:fixed;
-  inset:0;
-  z-index:1;
-  pointer-events:none;
-  overflow:hidden;
-}
-.candle{
-  position:absolute;
-  pointer-events:none;
-  will-change:transform,opacity;
-  opacity:0;
-  animation-fill-mode:forwards;
-  animation-timing-function:ease-out;
-}
-.candle .candle-wick{
-  position:absolute;
-  left:50%;
-  top:0;
-  transform:translateX(-50%);
-  width:2px;
-  background:currentColor;
-  opacity:.5;
-}
-.candle .candle-body{
-  position:absolute;
-  left:0;
-  width:100%;
-  border-radius:2px;
-  background:currentColor;
-  box-shadow:0 0 8px currentColor,0 0 18px currentColor;
-}
-.candle.green{ color:var(--green); }
-.candle.red{ color:var(--red); }
-
-/* ===== ADDED: Candle depth layers ===== */
-.candle.depth-back{
-  filter:blur(1.6px);
-}
-.candle.depth-back .candle-body{
-  box-shadow:0 0 4px currentColor;
-}
-.candle.depth-mid .candle-body{
-  box-shadow:0 0 8px currentColor,0 0 18px currentColor;
-}
-.candle.depth-front .candle-body{
-  box-shadow:0 0 12px currentColor,0 0 28px currentColor;
-}
-/* ===== END ADDED ===== */
-
-@keyframes candleRise{
-  0%   { transform:translateY(0) scale(.9);     opacity:0; }
-  12%  { opacity:var(--peak-opacity, .9); }
-  85%  { opacity:calc(var(--peak-opacity, .9) * 0.78); }
-  100% { transform:translateY(-115vh) scale(1); opacity:0; }
-}
-@keyframes candleFall{
-  0%   { transform:translateY(0) scale(.9);     opacity:0; }
-  12%  { opacity:var(--peak-opacity, .9); }
-  85%  { opacity:calc(var(--peak-opacity, .9) * 0.78); }
-  100% { transform:translateY(115vh) scale(1);  opacity:0; }
-}
-@keyframes candleReverseUp{
-  0%   { transform:translateY(0) scale(.7);    opacity:0; }
-  25%  { opacity:var(--peak-opacity, .8); }
-  100% { transform:translateY(-35vh) scale(.5); opacity:0; }
-}
-@keyframes candleReverseDown{
-  0%   { transform:translateY(0) scale(.7);    opacity:0; }
-  25%  { opacity:var(--peak-opacity, .8); }
-  100% { transform:translateY(35vh) scale(.5);  opacity:0; }
-}
-.candle.rise{ bottom:-90px; animation-name:candleRise; }
-.candle.fall{ top:-90px; animation-name:candleFall; }
-.candle.reverse-up{ bottom:-70px; animation-name:candleReverseUp; }
-.candle.reverse-down{ top:-70px; animation-name:candleReverseDown; }
-/* ===== ADDED: Candlestick Background Animation System - END ===== */
 </style>
 </head>
 <body>
 
-<!-- ===== ADDED: Ambient market atmosphere layers - START ===== -->
-<div class="stars" aria-hidden="true"></div>
-<div class="grid-overlay" aria-hidden="true"></div>
-<!-- ===== ADDED: Ambient market atmosphere layers - END ===== -->
+<div class="bg-earth"    aria-hidden="true"></div>
+<div class="bg-vignette" aria-hidden="true"></div>
+<div class="bg-stars"    aria-hidden="true"></div>
+<div class="bg-grid"     aria-hidden="true"></div>
+<div class="bg-ambient"  aria-hidden="true"></div>
 
-<!-- ===== ADDED: Candlestick animation stage - START ===== -->
+<!-- Faint background line chart -->
+<svg class="bg-chart" aria-hidden="true" viewBox="0 0 1440 230" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="chartFade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="rgba(251,191,36,0.16)"/>
+      <stop offset="100%" stop-color="rgba(251,191,36,0)"/>
+    </linearGradient>
+  </defs>
+  <path d="M0 190 L70 174 L140 181 L220 158 L300 166 L380 138 L460 152 L540 124 L620 135 L700 105 L780 118 L860 92 L940 104 L1020 76 L1100 90 L1180 64 L1260 78 L1340 52 L1400 64 L1440 44 L1440 230 L0 230 Z"
+        fill="url(#chartFade)" opacity="0.28"/>
+  <path d="M0 190 L70 174 L140 181 L220 158 L300 166 L380 138 L460 152 L540 124 L620 135 L700 105 L780 118 L860 92 L940 104 L1020 76 L1100 90 L1180 64 L1260 78 L1340 52 L1400 64 L1440 44"
+        fill="none" stroke="rgba(251,191,36,0.20)" stroke-width="1.4"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
 <div class="candle-stage" id="candleStage" aria-hidden="true"></div>
-<!-- ===== ADDED: Candlestick animation stage - END ===== -->
+
+<!-- Live ticker -->
+<div class="ticker-wrap" aria-hidden="true">
+  <div class="ticker-label">LIVE</div>
+  <div class="ticker-track">
+    <div class="ticker-inner" id="tickerInner"></div>
+  </div>
+</div>
 
 <div class="login-wrap">
 
-  <!-- ===== ADDED: Hero section - START ===== -->
   <div class="hero">
     <div class="hero-glow" aria-hidden="true"></div>
     <div class="logo-svg-wrap">
       <svg width="80" height="80" viewBox="0 0 62 62" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#f6d365"/>
-            <stop offset="40%" stop-color="#fbbf24"/>
-            <stop offset="70%" stop-color="#b45309"/>
+            <stop offset="0%"   stop-color="#f6d365"/>
+            <stop offset="40%"  stop-color="#fbbf24"/>
+            <stop offset="70%"  stop-color="#b45309"/>
             <stop offset="100%" stop-color="#fbbf24"/>
           </linearGradient>
           <linearGradient id="gB" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#fde68a"/>
-            <stop offset="50%" stop-color="#fbbf24"/>
+            <stop offset="0%"   stop-color="#fde68a"/>
+            <stop offset="50%"  stop-color="#fbbf24"/>
             <stop offset="100%" stop-color="#92400e"/>
           </linearGradient>
           <filter id="glow2">
@@ -408,48 +299,44 @@ body::after{
             <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
           </filter>
         </defs>
-        <path d="M10 8 L10 54 L28 54 C42 54 52 44 52 31 C52 18 42 8 28 8 Z
-                 M18 16 L27 16 C36 16 43 23 43 31 C43 39 36 46 27 46 L18 46 Z"
+        <path d="M10 8 L10 54 L28 54 C42 54 52 44 52 31 C52 18 42 8 28 8 Z M18 16 L27 16 C36 16 43 23 43 31 C43 39 36 46 27 46 L18 46 Z"
               fill="url(#gA)" filter="url(#glow2)"/>
         <rect x="22" y="26" width="3" height="12" rx="0.5" fill="url(#gB)" opacity="0.95"/>
-        <rect x="23" y="24" width="1" height="3" rx="0.5" fill="#fde68a"/>
-        <rect x="23" y="38" width="1" height="3" rx="0.5" fill="#fde68a"/>
+        <rect x="23" y="24" width="1" height="3"  rx="0.5" fill="#fde68a"/>
+        <rect x="23" y="38" width="1" height="3"  rx="0.5" fill="#fde68a"/>
         <rect x="27" y="21" width="3" height="15" rx="0.5" fill="url(#gB)" opacity="0.95"/>
-        <rect x="28" y="19" width="1" height="3" rx="0.5" fill="#fde68a"/>
-        <rect x="28" y="36" width="1" height="3" rx="0.5" fill="#fde68a"/>
+        <rect x="28" y="19" width="1" height="3"  rx="0.5" fill="#fde68a"/>
+        <rect x="28" y="36" width="1" height="3"  rx="0.5" fill="#fde68a"/>
         <rect x="32" y="23" width="3" height="13" rx="0.5" fill="url(#gB)" opacity="0.95"/>
-        <rect x="33" y="21" width="1" height="3" rx="0.5" fill="#fde68a"/>
-        <rect x="33" y="36" width="1" height="3" rx="0.5" fill="#fde68a"/>
+        <rect x="33" y="21" width="1" height="3"  rx="0.5" fill="#fde68a"/>
+        <rect x="33" y="36" width="1" height="3"  rx="0.5" fill="#fde68a"/>
         <path d="M14 50 Q31 58 50 42" stroke="url(#gA)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
         <polygon points="50,42 44,40 47,46" fill="url(#gA)"/>
       </svg>
     </div>
-    <div class="live-badge"><span class="live-dot"></span> Live Signals</div>
-    <h1 class="hero-title">DHITTA</h1>
-    <div class="hero-tagline">AI-Powered Market Intelligence</div>
+    <div class="live-badge"><span class="live-dot"></span>&nbsp;Live Signals</div>
+    <div class="hero-title-wrap">
+      <h1 class="hero-title">DHITTA</h1>
+    </div>
+    <div class="hero-tagline">AI&#x2011;Powered Market Intelligence</div>
     <div class="hero-sub">Detect opportunities before the crowd.</div>
   </div>
-  <!-- ===== ADDED: Hero section - END ===== -->
 
-  <!-- ===== ADDED: Status bar - START ===== -->
   <div class="status-bar">
     <span class="status-dot"></span>
     <span>Live Market Intelligence</span>
     <span class="status-sep">|</span>
-    <span>Markets Monitored: <strong>24</strong></span>
+    <span>Markets: <strong>24</strong></span>
     <span class="status-sep">|</span>
     <span>AI Accuracy: <strong>87%</strong></span>
     <span class="status-sep">|</span>
     <span>Status: <span class="status-active">Active</span></span>
   </div>
-  <!-- ===== ADDED: Status bar - END ===== -->
 
-  <!-- Login Card -->
   <div class="login-card">
     <div class="card-title">Welcome back</div>
     <div class="card-sub">Sign in to access your signal dashboard</div>
 
-    <!-- Error message -->
     <div id="err-box" class="error-box" style="display:none">
       <span>&#x26A0;</span>
       <span id="err-msg">Invalid username or password. Please try again.</span>
@@ -458,244 +345,25 @@ body::after{
     <form id="login-form" method="POST" action="/login" onsubmit="handleSubmit()">
       <div class="field">
         <label for="username">Username</label>
-        <input
-          type="text"
-          id="username"
-          name="username"
+        <input type="text" id="username" name="username"
           placeholder="Enter your username"
-          autocomplete="username"
-          autocapitalize="none"
-          required
-        >
+          autocomplete="username" autocapitalize="none" required>
       </div>
-
       <div class="field">
         <label for="password">Password</label>
         <div class="pw-wrap">
-          <input
-            type="password"
-            id="password"
-            name="password"
+          <input type="password" id="password" name="password"
             placeholder="Enter your password"
-            autocomplete="current-password"
-            required
-          >
+            autocomplete="current-password" required>
           <button type="button" class="pw-toggle" onclick="togglePw()" title="Show/hide password">
-            <span id="pw-eye">👁</span>
+            <span id="pw-eye">&#x1F441;</span>
           </button>
         </div>
       </div>
-
-      <button type="submit" class="login-btn" id="login-btn">
-        Sign In to Dhitta
-      </button>
+      <button type="submit" class="login-btn" id="login-btn">Sign In to Dhitta</button>
     </form>
 
     <hr class="divider">
 
-    <div style="font-size:11px;color:var(--muted);text-align:center;line-height:1.8">
-      <div>&#x1F512; Your session stays active for <strong style="color:var(--text)">24 hours</strong></div>
-      <div>&#x1F4F1; Works on mobile &middot; &#x1F4BB; Works on desktop</div>
-    </div>
-  </div>
-
-  <div class="login-footer">
-    <strong>Dhitta Trading Signals</strong><br>
-    Private access only &middot; Unauthorized access prohibited
-  </div>
-
-</div>
-
-<script>
-// Show error from URL param
-const params = new URLSearchParams(window.location.search);
-const errBox = document.getElementById('err-box');
-const errMsg = document.getElementById('err-msg');
-if (params.get('error') === 'invalid') {
-  errBox.style.display = 'flex';
-  errMsg.textContent = 'Invalid username or password. Please try again.';
-} else if (params.get('error') === 'missing') {
-  errBox.style.display = 'flex';
-  errMsg.textContent = 'Please enter both username and password.';
-}
-
-// Auto-focus username
-document.getElementById('username').focus();
-
-// Show loading state on submit
-function handleSubmit() {
-  const btn = document.getElementById('login-btn');
-  btn.classList.add('loading');
-  btn.innerHTML = '<span class="spinner"></span> Signing in...';
-}
-
-// Password toggle
-function togglePw() {
-  const inp = document.getElementById('password');
-  const eye = document.getElementById('pw-eye');
-  if (inp.type === 'password') {
-    inp.type = 'text';
-    eye.textContent = '🙈';
-  } else {
-    inp.type = 'password';
-    eye.textContent = '👁';
-  }
-}
-
-// Enter key submits
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('login-form').requestSubmit();
-});
-
-// ===== ADDED: Candlestick Background Animation System - START =====
-(function(){
-  const stage = document.getElementById('candleStage');
-  const MAX_CANDLES = 40;
-  let activeCount = 0;
-
-  function rand(min, max){ return Math.random() * (max - min) + min; }
-
-  // ===== ADDED: Depth system for visual layering =====
-  function randomDepth(){
-    const r = Math.random();
-    if (r < 0.35) return 'back';
-    if (r < 0.82) return 'mid';
-    return 'front';
-  }
-  const DEPTH_SETTINGS = {
-    back:  { sizeRange:[0.45, 0.75], peakOpacity:0.30 },
-    mid:   { sizeRange:[0.85, 1.2],  peakOpacity:0.75 },
-    front: { sizeRange:[1.2, 1.7],   peakOpacity:0.95 },
-  };
-  // ===== END ADDED =====
-
-  function spawnCandle(opts){
-    if (activeCount >= MAX_CANDLES) return;
-    const { color, dir, sizeScale = 1, durationRange = [2, 4], depth = null } = opts;
-
-    const candle = document.createElement('div');
-    let depthClass = '';
-    let finalSizeScale = sizeScale;
-    let peakOpacity = 0.9;
-
-    if (depth){
-      const d = DEPTH_SETTINGS[depth];
-      depthClass = ` depth-${depth}`;
-      finalSizeScale = sizeScale * rand(d.sizeRange[0], d.sizeRange[1]);
-      peakOpacity = d.peakOpacity;
-    }
-
-    candle.className = `candle ${color} ${dir}${depthClass}`;
-    candle.style.setProperty('--peak-opacity', peakOpacity);
-
-    const bodyHeight  = rand(28, 70) * finalSizeScale;
-    const bodyWidth   = rand(6, 12) * finalSizeScale;
-    const wickTop     = rand(6, 16) * finalSizeScale;
-    const wickBottom  = rand(6, 16) * finalSizeScale;
-    const totalHeight = bodyHeight + wickTop + wickBottom;
-
-    candle.style.width  = bodyWidth + 'px';
-    candle.style.height = totalHeight + 'px';
-
-    // Keep candles flowing around the centered login card, not over it
-    let leftPercent;
-    do {
-      leftPercent = rand(1, 99);
-    } while (leftPercent > 24 && leftPercent < 76 && Math.random() < 0.88);
-    candle.style.left = leftPercent + 'vw';
-
-    const duration = rand(durationRange[0], durationRange[1]);
-    candle.style.animationDuration = duration + 's';
-
-    // wick (thin line spanning full height)
-    const wick = document.createElement('div');
-    wick.className = 'candle-wick';
-    wick.style.height = totalHeight + 'px';
-    candle.appendChild(wick);
-
-    // body (thicker rectangle)
-    const body = document.createElement('div');
-    body.className = 'candle-body';
-    body.style.top = wickTop + 'px';
-    body.style.height = bodyHeight + 'px';
-    candle.appendChild(body);
-
-    stage.appendChild(candle);
-    activeCount++;
-
-    candle.addEventListener('animationend', () => {
-      candle.remove();
-      activeCount--;
-    });
-  }
-
-  // 1-3 candles per keystroke, random green(up) / red(down), with depth variety
-  function spawnTypingCandles(){
-    const count = Math.floor(rand(1, 4)); // 1,2 or 3
-    for (let i = 0; i < count; i++){
-      if (Math.random() < 0.5){
-        spawnCandle({ color:'green', dir:'rise', depth:randomDepth() });
-      } else {
-        spawnCandle({ color:'red', dir:'fall', depth:randomDepth() });
-      }
-    }
-  }
-
-  // Small reversal effect on backspace
-  function spawnBackspaceEffect(){
-    if (Math.random() < 0.5){
-      spawnCandle({ color:'red', dir:'reverse-up', sizeScale:0.6, durationRange:[1,1.6], depth:'mid' });
-    } else {
-      spawnCandle({ color:'green', dir:'reverse-down', sizeScale:0.6, durationRange:[1,1.6], depth:'mid' });
-    }
-  }
-
-  // Larger burst on Enter — mix of depths for a rich market-open feel
-  function spawnEnterBurst(){
-    const count = Math.floor(rand(8, 13));
-    for (let i = 0; i < count; i++){
-      if (Math.random() < 0.5){
-        spawnCandle({ color:'green', dir:'rise', sizeScale:rand(0.9,1.3), depth:randomDepth() });
-      } else {
-        spawnCandle({ color:'red', dir:'fall', sizeScale:rand(0.9,1.3), depth:randomDepth() });
-      }
-    }
-  }
-
-  // ===== ADDED: Subtle ambient market atmosphere (idle drift) =====
-  function spawnAmbientCandle(){
-    if (Math.random() < 0.5){
-      spawnCandle({ color:'green', dir:'rise', sizeScale:0.8, durationRange:[3,5], depth:'back' });
-    } else {
-      spawnCandle({ color:'red', dir:'fall', sizeScale:0.8, durationRange:[3,5], depth:'back' });
-    }
-  }
-  setInterval(() => {
-    if (activeCount < MAX_CANDLES - 2) spawnAmbientCandle();
-  }, 2800);
-  // ===== END ADDED =====
-
-  const usernameInput = document.getElementById('username');
-  const passwordInput = document.getElementById('password');
-
-  [usernameInput, passwordInput].forEach(input => {
-    if (!input) return;
-
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Backspace'){
-        spawnBackspaceEffect();
-      } else if (e.key === 'Enter'){
-        spawnEnterBurst();
-      }
-    });
-
-    input.addEventListener('input', (e) => {
-      if (e.inputType === 'deleteContentBackward') return; // handled by keydown
-      spawnTypingCandles();
-    });
-  });
-})();
-// ===== ADDED: Candlestick Background Animation System - END =====
-</script>
-</body>
-</html>
+    <div class="card-footer-info">
+      <div>&#x1F512; Session stays active for <strong>24
