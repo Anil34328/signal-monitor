@@ -794,15 +794,41 @@ function renderCard(pair, candles) {
   if (buyV >= 3)  sig = 'BUY';
   if (sellV >= 3) sig = 'SELL';
 
-  // Compute confidence from real indicators
-  const { score: conf, reasons, warnings } = sig !== 'WAIT'
-    ? calcConfidence(pair, closes, highs, lows, rsi, macdH, bb, stoch, atr, trend, sr, sig)
-    : { score: 0, reasons: [], warnings: [] };
+  // Compute REAL confidence score for every pair, regardless of direction vote.
+  // For a clear BUY/SELL: score against that direction.
+  // For WAIT (mixed votes): score against whichever direction has more votes;
+  //   if truly tied, score both and take the higher — so the user always
+  //   sees a meaningful 0-100 number, never a forced zero.
+  let conf, reasons, warnings, scoredDir;
+  if (sig !== 'WAIT') {
+    // Clear majority — score against the voted direction
+    scoredDir = sig;
+    ({ score: conf, reasons, warnings } = calcConfidence(pair, closes, highs, lows, rsi, macdH, bb, stoch, atr, trend, sr, sig));
+  } else {
+    // Mixed — pick the direction with more votes, or try both if tied
+    if (buyV > sellV) {
+      scoredDir = 'BUY';
+      ({ score: conf, reasons, warnings } = calcConfidence(pair, closes, highs, lows, rsi, macdH, bb, stoch, atr, trend, sr, 'BUY'));
+    } else if (sellV > buyV) {
+      scoredDir = 'SELL';
+      ({ score: conf, reasons, warnings } = calcConfidence(pair, closes, highs, lows, rsi, macdH, bb, stoch, atr, trend, sr, 'SELL'));
+    } else {
+      // Perfectly tied — score both, keep whichever is higher
+      const buyResult  = calcConfidence(pair, closes, highs, lows, rsi, macdH, bb, stoch, atr, trend, sr, 'BUY');
+      const sellResult = calcConfidence(pair, closes, highs, lows, rsi, macdH, bb, stoch, atr, trend, sr, 'SELL');
+      if (buyResult.score >= sellResult.score) {
+        scoredDir = 'BUY'; conf = buyResult.score; reasons = buyResult.reasons; warnings = buyResult.warnings;
+      } else {
+        scoredDir = 'SELL'; conf = sellResult.score; reasons = sellResult.reasons; warnings = sellResult.warnings;
+      }
+    }
+  }
 
   const jp = isJackpot(conf, sig);
 
-  // Signals below 90% do NOT get highlighted, do not get saved, do not get emailed
-  // But the card still renders with full data — just the badge shows WAIT
+  // effectiveSig controls the ACTION badge and what gets saved/emailed.
+  // A signal is only actionable when the vote majority agrees AND conf >= 90%.
+  // The confidence number itself is ALWAYS shown as-is on the card.
   const effectiveSig = (sig !== 'WAIT' && conf >= CONFIDENCE_THRESHOLD) ? sig : 'WAIT';
 
   // Indicator labels
@@ -862,17 +888,28 @@ function renderCard(pair, candles) {
   </div>
   <div class="score-section">
     <div class="score-label">
-      <span>Confidence: ${conf}% ${sig !== 'WAIT' && conf < CONFIDENCE_THRESHOLD ? '<span style="color:var(--red)">— below 90% threshold, signal suppressed</span>' : ''}</span>
-      <span style="color:${sc}">${conf >= CONFIDENCE_THRESHOLD ? '✅ TRADEABLE' : '❌ NOT TRADEABLE'}</span>
+      <span>Confidence: <strong style="color:${sc};font-size:14px">${conf}%</strong>
+        <span style="color:var(--muted);font-size:10px;margin-left:4px">(scored as ${scoredDir}${sig==='WAIT'?' — mixed indicators':''})</span>
+      </span>
+      <span style="color:${sc}">
+        ${conf >= 90 ? '✅ TRADEABLE — save &amp; email' :
+          conf >= 75 ? '🟡 STRONG — needs 90% to trade' :
+          conf >= 55 ? '🟠 MODERATE — wait for alignment' :
+          '🔴 WEAK — do not trade'}
+      </span>
     </div>
     <div class="score-track"><div class="score-fill" style="width:${conf}%;background:${sc}"></div></div>
+    ${sig !== 'WAIT' && conf < CONFIDENCE_THRESHOLD ?
+      `<div style="font-size:10px;color:var(--muted);margin-top:4px">Signal suppressed — ${CONFIDENCE_THRESHOLD}% required to trade. Currently ${conf}%, need ${CONFIDENCE_THRESHOLD - conf}% more.</div>` : ''}
   </div>
   ${warnings.length ? `<div style="font-size:11px;color:var(--amber);padding:6px 0;line-height:1.7">⚠️ ${warnings.join(' · ')}</div>` : ''}
   <div class="pair-footer">
     <span class="foot-tag">Twelve Data ✓</span>
     <span class="foot-tag">ATR ${atrPips}p</span>
-    <span class="foot-tag" style="color:${sc}">${conf}% conf</span>
-    <span class="foot-tag" style="color:${effectiveSig==='BUY'?'var(--green)':effectiveSig==='SELL'?'var(--red)':'var(--muted)'}">${effectiveSig}</span>
+    <span class="foot-tag" style="color:${sc};font-weight:600">${conf}% conf</span>
+    <span class="foot-tag" style="color:${effectiveSig==='BUY'?'var(--green)':effectiveSig==='SELL'?'var(--red)':'var(--muted)'}">
+      ${effectiveSig !== 'WAIT' ? effectiveSig : (conf > 0 ? `~${scoredDir} (${conf}%)` : 'WAIT')}
+    </span>
     ${jp ? '<span class="foot-tag" style="color:var(--jackpot);border-color:var(--jackpot)">🎯 Jackpot</span>' : ''}
   </div>`;
 
@@ -890,7 +927,11 @@ function renderCard(pair, candles) {
   }
 
   // Return computed data for dropdown ranking and history
-  return { pair, pr, rsi, macdH, bb, stoch, atr, atrPips, trend, sr, sig: effectiveSig, rawSig: sig, conf, jp, reasons, warnings };
+  // conf = REAL score (always 0-100, never forced to zero)
+  // sig  = effectiveSig (BUY/SELL only if conf >= 90, otherwise WAIT)
+  // rawSig = direction majority vote before threshold check
+  // scoredDir = which direction conf was scored against
+  return { pair, pr, rsi, macdH, bb, stoch, atr, atrPips, trend, sr, sig: effectiveSig, rawSig: sig, scoredDir, conf, jp, reasons, warnings };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1227,8 +1268,12 @@ function buildPairDropdown() {
   const sel = document.getElementById('pair-select');
   sel.innerHTML = '<option value="">— Select a pair —</option>' +
     ranked.map(pd => {
-      const star = pd.conf >= CONFIDENCE_THRESHOLD ? (pd.jp ? '🎯' : '✅') : '⬜';
-      return `<option value="${pd.pair.id}">${star} ${pd.pair.display} — Conf: ${pd.conf}% | ${pd.sig}</option>`;
+      const star = pd.conf >= CONFIDENCE_THRESHOLD ? (pd.jp ? '🎯' : '✅') :
+                   pd.conf >= 75 ? '🟡' : pd.conf >= 55 ? '🟠' : '⬜';
+      const label = pd.sig !== 'WAIT'
+        ? `${pd.sig} ${pd.conf}%`
+        : `~${pd.scoredDir||'?'} ${pd.conf}% (mixed)`;
+      return `<option value="${pd.pair.id}">${star} ${pd.pair.display} — ${label}</option>`;
     }).join('');
   // Auto-select best
   if (ranked.length) { sel.value = ranked[0].pair.id; switchPairView(ranked[0].pair.id); }
