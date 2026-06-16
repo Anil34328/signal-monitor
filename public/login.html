@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="overflow:hidden;height:100%;">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,16 +18,20 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{
   background:var(--bg);color:var(--text);font-family:var(--mono);
-  min-height:100vh;display:flex;flex-direction:column;
+  min-height:100%;height:100%;display:flex;flex-direction:column;
   align-items:center;justify-content:center;
-  padding:20px;position:relative;overflow:hidden;
+  padding:20px;position:relative;
+  /* overflow REMOVED — was clipping position:fixed candles on mobile/Chromium */
 }
+/* clip backgrounds but NOT fixed candles */
+.bg-clip-wrap{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
 .bg-earth{position:fixed;inset:0;z-index:0;pointer-events:none;
   background-image:url('earth-bg.jpg');background-size:cover;background-position:center top;
   opacity:0.10;filter:grayscale(90%) brightness(.5) contrast(1.1);}
 .bg-vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
-  background:radial-gradient(ellipse 80% 80% at 50% 0%,rgba(7,9,12,0) 0%,rgba(7,9,12,0.92) 100%),
-    linear-gradient(180deg,rgba(7,9,12,0.55) 0%,rgba(7,9,12,0.88) 55%,rgba(7,9,12,0.98) 100%);}
+  /* FIXED: reduced opacity so candles are not smothered */
+  background:radial-gradient(ellipse 80% 80% at 50% 0%,rgba(7,9,12,0) 0%,rgba(7,9,12,0.60) 100%),
+    linear-gradient(180deg,rgba(7,9,12,0.30) 0%,rgba(7,9,12,0.55) 55%,rgba(7,9,12,0.75) 100%);}
 .bg-stars{position:fixed;inset:0;z-index:2;pointer-events:none;
   background-image:
     radial-gradient(1px 1px at 5% 10%,rgba(255,255,255,.50),transparent),
@@ -206,10 +210,10 @@ body{
 .candle.red{color:var(--red);}
 .candle.depth-back{filter:blur(2px);}
 .candle.depth-back .candle-body{box-shadow:0 0 4px currentColor;opacity:.68;}
-.candle.depth-mid .candle-body{box-shadow:0 0 8px currentColor,0 0 20px currentColor;}
-.candle.depth-front .candle-body{box-shadow:0 0 10px currentColor,0 0 28px currentColor,0 0 52px currentColor;}
-.candle.green.depth-front .candle-body{box-shadow:0 0 10px #22c55e,0 0 26px rgba(34,197,94,.52),0 0 52px rgba(34,197,94,.22);}
-.candle.red.depth-front .candle-body{box-shadow:0 0 10px #ef4444,0 0 26px rgba(239,68,68,.52),0 0 52px rgba(239,68,68,.22);}
+.candle.depth-mid .candle-body{box-shadow:0 0 10px currentColor,0 0 24px currentColor,0 0 40px currentColor;} /* FIXED: boosted glow */
+.candle.depth-front .candle-body{box-shadow:0 0 14px currentColor,0 0 36px currentColor,0 0 70px currentColor,0 0 100px currentColor;} /* FIXED: max glow */
+.candle.green.depth-front .candle-body{box-shadow:0 0 14px #22c55e,0 0 36px rgba(34,197,94,.70),0 0 70px rgba(34,197,94,.38),0 0 100px rgba(34,197,94,.18);}
+.candle.red.depth-front .candle-body{box-shadow:0 0 14px #ef4444,0 0 36px rgba(239,68,68,.70),0 0 70px rgba(239,68,68,.38),0 0 100px rgba(239,68,68,.18);}
 @keyframes candleRise{
   0%{transform:translateY(0) scale(.88);opacity:0;}
   10%{opacity:var(--peak-opacity,.9);}
@@ -354,16 +358,4 @@ body{
         <div class="pw-wrap">
           <input type="password" id="password" name="password"
             placeholder="Enter your password"
-            autocomplete="current-password" required>
-          <button type="button" class="pw-toggle" onclick="togglePw()" title="Show/hide password">
-            <span id="pw-eye">&#x1F441;</span>
-          </button>
-        </div>
-      </div>
-      <button type="submit" class="login-btn" id="login-btn">Sign In to Dhitta</button>
-    </form>
-
-    <hr class="divider">
-
-    <div class="card-footer-info">
-      <div>&#x1F512; Session stays active for <strong>24
+        
