@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" style="overflow:hidden;height:100%;">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,15 +16,22 @@
   --font:'Syne',sans-serif;--mono:'DM Mono',monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  /* ROOT FIX: no overflow:hidden and no fixed height — page must scroll naturally */
+  width:100%;
+  margin:0;
+}
 body{
   background:var(--bg);color:var(--text);font-family:var(--mono);
-  min-height:100%;height:100%;display:flex;flex-direction:column;
+  min-height:100vh;          /* was height:100% — caused scroll lock */
+  display:flex;flex-direction:column;
   align-items:center;justify-content:center;
-  padding:20px;position:relative;
-  /* overflow REMOVED — was clipping position:fixed candles on mobile/Chromium */
+  padding:20px;
+  padding-bottom:54px;        /* room above fixed ticker so button is reachable */
+  position:relative;
+  overflow-x:hidden;          /* only hide horizontal scrollbar from off-screen candles */
+  overflow-y:auto;            /* ROOT FIX: allow vertical scroll */
 }
-/* clip backgrounds but NOT fixed candles */
-.bg-clip-wrap{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
 .bg-earth{position:fixed;inset:0;z-index:0;pointer-events:none;
   background-image:url('earth-bg.jpg');background-size:cover;background-position:center top;
   opacity:0.10;filter:grayscale(90%) brightness(.5) contrast(1.1);}
@@ -63,7 +70,10 @@ body{
   0%,100%{opacity:.75;transform:translateX(-50%) scale(1)}
   50%{opacity:1;transform:translateX(-50%) scale(1.07)}}
 .bg-chart{position:fixed;bottom:0;left:0;right:0;z-index:5;pointer-events:none;}
-.candle-stage{position:fixed;inset:0;z-index:6;pointer-events:none;overflow:hidden;}
+.candle-stage{position:fixed;inset:0;z-index:6;pointer-events:none;overflow:visible;}
+/* ROOT FIX: overflow:hidden here clipped every candle mid-flight — changed to visible.
+   Body now owns the scroll, and candle-stage is fixed to viewport so it never causes
+   page overflow itself; "visible" just stops it clipping its own animating children. */
 
 /* TICKER */
 .ticker-wrap{position:fixed;bottom:0;left:0;right:0;z-index:20;height:34px;
@@ -244,6 +254,15 @@ body{
   .hero-tagline{font-size:9.5px;letter-spacing:.22em;}
   .status-bar{font-size:9px;gap:6px;padding:8px 12px;}
   .ticker-wrap{display:none;}
+  /* ROOT FIX: ensure body can grow taller than viewport and login-wrap never gets clipped */
+  body{padding-bottom:24px;}
+  .login-wrap{margin-bottom:20px;}
+}
+/* Extra safety for very short screens (landscape phones, small devices) */
+@media(max-height:700px){
+  .hero{margin-bottom:14px;}
+  .status-bar{margin:12px 0 14px;}
+  .login-card{padding:26px 28px 24px;}
 }
 </style>
 </head>
@@ -358,4 +377,132 @@ body{
         <div class="pw-wrap">
           <input type="password" id="password" name="password"
             placeholder="Enter your password"
-        
+            autocomplete="current-password" required>
+          <button type="button" class="pw-toggle" onclick="togglePw()" title="Show/hide password">
+            <span id="pw-eye">&#x1F441;</span>
+          </button>
+        </div>
+      </div>
+      <button type="submit" class="login-btn" id="login-btn">Sign In to Dhitta</button>
+    </form>
+
+    <hr class="divider">
+
+    <div class="card-footer-info">
+      <div>&#x1F512; Session stays active for <strong>24 hours</strong></div>
+      <div>&#x1F4F1; Mobile &nbsp;&middot;&nbsp; &#x1F4BB; Desktop</div>
+    </div>
+  </div>
+
+  <div class="login-footer">
+    <strong>Dhitta Trading Signals</strong><br>
+    Private access only &middot; Unauthorized access prohibited
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const p=new URLSearchParams(window.location.search);
+  const box=document.getElementById('err-box');
+  const msg=document.getElementById('err-msg');
+  if(p.get('error')==='invalid'){box.style.display='flex';msg.textContent='Invalid username or password. Please try again.';}
+  else if(p.get('error')==='missing'){box.style.display='flex';msg.textContent='Please enter both username and password.';}
+})();
+document.getElementById('username').focus();
+function handleSubmit(){
+  const btn=document.getElementById('login-btn');
+  btn.classList.add('loading');
+  btn.innerHTML='<span class="spinner"></span> Signing in...';
+}
+function togglePw(){
+  const inp=document.getElementById('password');
+  const eye=document.getElementById('pw-eye');
+  inp.type=inp.type==='password'?'text':'password';
+  eye.innerHTML=inp.type==='password'?'&#x1F441;':'&#x1F648;';
+}
+document.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('login-form').requestSubmit();});
+
+/* TICKER */
+(function(){
+  const PAIRS=[
+    {sym:'EUR/USD',price:'1.0874',chg:'+0.0012',dir:'up'},
+    {sym:'GBP/USD',price:'1.2643',chg:'-0.0031',dir:'dn'},
+    {sym:'XAU/USD',price:'2318.5',chg:'+4.20',dir:'up'},
+    {sym:'USD/JPY',price:'149.82',chg:'+0.28',dir:'up'},
+    {sym:'BTC/USD',price:'67,241',chg:'-312',dir:'dn'},
+    {sym:'ETH/USD',price:'3,482',chg:'+28',dir:'up'},
+    {sym:'BNB/USD',price:'412.3',chg:'-2.1',dir:'dn'},
+    {sym:'SOL/USD',price:'142.8',chg:'+3.5',dir:'up'},
+    {sym:'AUD/USD',price:'0.6531',chg:'-0.0008',dir:'dn'},
+    {sym:'USD/CAD',price:'1.3685',chg:'+0.0015',dir:'up'},
+  ];
+  const item=p=>`<span class="ticker-item"><span class="ticker-sym">${p.sym}</span><span class="ticker-price">${p.price}</span><span class="${p.dir==='up'?'ticker-up':'ticker-dn'}">${p.dir==='up'?'▲':'▼'} ${p.chg}</span></span>`;
+  const html=PAIRS.map(item).join('')+PAIRS.map(item).join('');
+  document.getElementById('tickerInner').innerHTML=html;
+})();
+
+/* CANDLESTICK SYSTEM — all original logic preserved + depth upgrade */
+(function(){
+  const stage=document.getElementById('candleStage');
+  const MAX=44;
+  let active=0;
+  function rand(a,b){return Math.random()*(b-a)+a;}
+  function rDepth(){const r=Math.random();return r<0.32?'back':r<0.80?'mid':'front';}
+  const DEPTH={
+    back: {sizeRange:[0.55,0.85],peakOpacity:0.55}, // FIXED: was 0.28 — invisible through vignette
+    mid:  {sizeRange:[1.00,1.40],peakOpacity:0.82}, // FIXED: boosted size and opacity
+    front:{sizeRange:[1.40,2.00],peakOpacity:1.00}, // FIXED: max opacity for foreground
+  };
+  function spawn(opts){
+    if(active>=MAX)return;
+    const{color,dir,sizeScale=1,durationRange=[2,4],depth=null}=opts;
+    const el=document.createElement('div');
+    let sz=sizeScale,po=0.9;
+    if(depth){const d=DEPTH[depth];sz=sizeScale*rand(d.sizeRange[0],d.sizeRange[1]);po=d.peakOpacity;}
+    el.className=`candle ${color} ${dir}${depth?' depth-'+depth:''}`;
+    el.style.setProperty('--peak-opacity',po);
+    const bH=rand(26,68)*sz,bW=rand(5,11)*sz,wT=rand(5,15)*sz,wB=rand(5,15)*sz,tH=bH+wT+wB;
+    el.style.width=bW+'px';el.style.height=tH+'px';
+    // FIXED: was excluding 22-78% with 90% prob — too restrictive on mobile
+    // Now allows candles across full width, with gentle bias away from dead centre
+    let lp=rand(0,100);
+    if(lp>35&&lp<65&&Math.random()<0.65){lp=Math.random()<0.5?rand(0,30):rand(70,100);}
+    el.style.left=lp+'vw';
+    el.style.animationDuration=rand(durationRange[0],durationRange[1])+'s';
+    const wick=document.createElement('div');wick.className='candle-wick';wick.style.height=tH+'px';el.appendChild(wick);
+    const body=document.createElement('div');body.className='candle-body';body.style.top=wT+'px';body.style.height=bH+'px';el.appendChild(body);
+    stage.appendChild(el);active++;
+    el.addEventListener('animationend',()=>{el.remove();active--;});
+  }
+  function spawnTyping(){const n=Math.floor(rand(1,4));for(let i=0;i<n;i++)Math.random()<.5?spawn({color:'green',dir:'rise',depth:rDepth()}):spawn({color:'red',dir:'fall',depth:rDepth()});}
+  function spawnBS(){Math.random()<.5?spawn({color:'red',dir:'reverse-up',sizeScale:.6,durationRange:[1,1.6],depth:'mid'}):spawn({color:'green',dir:'reverse-down',sizeScale:.6,durationRange:[1,1.6],depth:'mid'});}
+  function spawnEnter(){const n=Math.floor(rand(8,14));for(let i=0;i<n;i++)Math.random()<.5?spawn({color:'green',dir:'rise',sizeScale:rand(.9,1.3),depth:rDepth()}):spawn({color:'red',dir:'fall',sizeScale:rand(.9,1.3),depth:rDepth()});}
+  function spawnAmbient(){if(active<MAX-3)Math.random()<.5?spawn({color:'green',dir:'rise',sizeScale:.75,durationRange:[3.5,5.5],depth:'back'}):spawn({color:'red',dir:'fall',sizeScale:.75,durationRange:[3.5,5.5],depth:'back'});}
+  function spawnMid(){if(active<MAX-5&&Math.random()<0.4)Math.random()<.5?spawn({color:'green',dir:'rise',sizeScale:1.0,durationRange:[2.8,4.2],depth:'mid'}):spawn({color:'red',dir:'fall',sizeScale:1.0,durationRange:[2.8,4.2],depth:'mid'});}
+  setInterval(spawnAmbient,1400); // FIXED: was 2600ms — too infrequent
+  setInterval(spawnMid,2200); // FIXED: was 4800ms — too infrequent
+  // FIXED: immediate spawn on load so candles are visible instantly
+  (function initBurst(){
+    for(let i=0;i<6;i++){
+      setTimeout(()=>{
+        Math.random()<.5?spawn({color:'green',dir:'rise',depth:rDepth()}):spawn({color:'red',dir:'fall',depth:rDepth()});
+      },i*280);
+    }
+  })();
+  [document.getElementById('username'),document.getElementById('password')].forEach(inp=>{
+    if(!inp)return;
+    inp.addEventListener('keydown',e=>{if(e.key==='Backspace')spawnBS();else if(e.key==='Enter')spawnEnter();});
+    // FIXED: iOS Safari doesn't set e.inputType — use length delta instead
+    let _prevLen=0;
+    inp.addEventListener('input',e=>{
+      const cur=inp.value.length;
+      if(cur<_prevLen){_prevLen=cur;return;} // backspace
+      _prevLen=cur;
+      spawnTyping();
+    });
+  });
+})();
+</script>
+</body>
+</html>
