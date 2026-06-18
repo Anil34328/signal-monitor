@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1,
+    "username": "anil",
+    "name": "Anil",
+    "email": "",
+    "role": "admin",
+    "createdAt": "2024-06-12T00:00:00.000Z",
+    "createdBy": "system"
+  },
+  {
+    "id": 2,
+    "username": "trader2",
+    "name": "Trader 2",
+    "email": "",
+    "role": "write",
+    "createdAt": "2024-06-12T00:00:00.000Z",
+    "createdBy": "system"
+  },
+  {
+    "id": 3,
+    "username": "trader3",
+    "name": "Trader 3",
+    "email": "",
+    "role": "read",
+    "createdAt": "2024-06-12T00:00:00.000Z",
+    "createdBy": "system"
+  }
+]
+
