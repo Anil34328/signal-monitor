@@ -507,4 +507,15 @@ app.get('/', requireAuth, (req, res) => {
 app.use('/', requireAuth, express.static(path.join(__dirname, 'public')));
 
 app.get('*', requireAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'p
+  res.sendFile(path.join(__dirname, 'public', 'dhitta-trading-signals.html'));
+});
+
+// ── START ─────────────────────────────────────────────────────────────────────
+app.listen(PORT, () => {
+  const users = getUsers();
+  console.log(`\n✅ Dhitta Trading Signals running on port ${PORT}`);
+  console.log(`🔐 Users: ${users.map(u => `${u.username} (${u.role})`).join(', ')}`);
+  console.log(`📈 Twelve Data: ${process.env.TWELVEDATA_KEY ? '✅ Key set' : '❌ Missing — add TWELVEDATA_KEY env var'}`);
+  console.log(`🤖 Gemini:      ${process.env.GEMINI_KEY    ? '✅' : '❌ Optional — add GEMINI_KEY'}`);
+  console.log(`📧 Email:       ${process.env.EJS_SID        ? '✅' : '❌ Optional — add EJS_SID/TID/PUB/EMAIL_ADDR'}\n`);
+});
