@@ -3,6 +3,7 @@ const session = require('express-session');
 const crypto  = require('crypto');
 const path    = require('path');
 const https   = require('https');
+const fs      = require('fs');
 const app     = express();
 const PORT    = process.env.PORT || 3000;
 
@@ -26,12 +27,74 @@ const PORT    = process.env.PORT || 3000;
 //    Free tier: 800 API requests/day, 8 requests/minute
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── USERS ─────────────────────────────────────────────────────────────────────
-const USERS = [
-  { id:1, username:'anil',    password: process.env.PASS_ANIL    || 'dhitta@2024', displayName:'Anil',     role:'admin' },
-  { id:2, username:'trader2', password: process.env.PASS_TRADER2 || 'signals@123', displayName:'Trader 2', role:'user'  },
-  { id:3, username:'trader3', password: process.env.PASS_TRADER3 || 'dhitta@456',  displayName:'Trader 3', role:'user'  },
-];
+// ═══════════════════════════════════════════════════════════════════════════
+//  ADMIN MANAGEMENT SYSTEM — persistent users / settings / audit log
+// ═══════════════════════════════════════════════════════════════════════════
+const DATA_DIR      = path.join(__dirname, 'data');
+const USERS_FILE     = path.join(DATA_DIR, 'users.json');
+const SETTINGS_FILE  = path.join(DATA_DIR, 'settings.json');
+const AUDIT_FILE     = path.join(DATA_DIR, 'audit-log.json');
+
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+
+function ensureFile(file, defaultContent) {
+  if (!fs.existsSync(file)) fs.writeFileSync(file, JSON.stringify(defaultContent, null, 2));
+}
+
+// Migrate from the original hardcoded USERS array on first run.
+// Original roles were 'admin' / 'user' — 'user' maps to 'write' by default
+// so existing trader accounts keep their ability to view + use the dashboard
+// exactly as before. Admin can downgrade anyone to 'read' afterwards.
+ensureFile(USERS_FILE, [
+  { id: 1, username: 'anil',    name: 'Anil',     email: '', role: 'admin', createdAt: new Date().toISOString(), createdBy: 'system' },
+  { id: 2, username: 'trader2', name: 'Trader 2', email: '', role: 'write', createdAt: new Date().toISOString(), createdBy: 'system' },
+  { id: 3, username: 'trader3', name: 'Trader 3', email: '', role: 'write', createdAt: new Date().toISOString(), createdBy: 'system' },
+]);
+ensureFile(SETTINGS_FILE, {
+  signalStorageThreshold: 90,
+  emailAlertThreshold: 90,
+  updatedAt: new Date().toISOString(),
+  updatedBy: 'system'
+});
+ensureFile(AUDIT_FILE, []);
+
+function readJSON(file, fallback) {
+  try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
+  catch (e) { console.error(`[Data] Failed to read ${file}:`, e.message); return fallback; }
+}
+function writeJSON(file, data) {
+  try { fs.writeFileSync(file, JSON.stringify(data, null, 2)); return true; }
+  catch (e) { console.error(`[Data] Failed to write ${file}:`, e.message); return false; }
+}
+function getUsers()     { return readJSON(USERS_FILE, []); }
+function setUsers(u)    { return writeJSON(USERS_FILE, u); }
+function getSettings()  { return readJSON(SETTINGS_FILE, { signalStorageThreshold: 90, emailAlertThreshold: 90 }); }
+function setSettings(s) { return writeJSON(SETTINGS_FILE, s); }
+function getAudit()     { return readJSON(AUDIT_FILE, []); }
+function appendAudit(entry) {
+  const log = getAudit();
+  log.unshift({ id: Date.now() + '-' + Math.random().toString(36).slice(2, 7), timestamp: new Date().toISOString(), ...entry });
+  if (log.length > 2000) log.length = 2000;
+  writeJSON(AUDIT_FILE, log);
+}
+
+const ROLES = ['admin', 'write', 'read'];
+function isValidRole(r) { return ROLES.includes(r); }
+
+// ── PASSWORDS — still env-var based, exactly as in the original file ─────────
+// Each user's password comes from PASS_<USERNAME_UPPERCASE>, falling back to
+// the original 3 defaults for the original 3 accounts. New users created via
+// the admin panel need their own PASS_<USERNAME> env var set on the server
+// before they can log in — there is no plaintext password storage anywhere.
+const FALLBACK_PASSWORDS = {
+  anil:    'dhitta@2024',
+  trader2: 'signals@123',
+  trader3: 'dhitta@456'
+};
+function getPasswordFor(username) {
+  const envKey = 'PASS_' + username.toUpperCase();
+  return process.env[envKey] || FALLBACK_PASSWORDS[username.toLowerCase()] || null;
+}
 
 function safeCompare(a, b) {
   const bufA = Buffer.from(String(a));
@@ -58,6 +121,10 @@ function requireAuth(req, res, next) {
   if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Unauthorized' });
   res.redirect('/login');
 }
+function requireAdmin(req, res, next) {
+  if (req.session && req.session.role === 'admin') return next();
+  return res.status(403).json({ error: 'Forbidden — admin access required' });
+}
 
 // ── LOGIN ROUTES ──────────────────────────────────────────────────────────────
 app.get('/login', (req, res) => {
@@ -68,16 +135,25 @@ app.get('/login', (req, res) => {
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.redirect('/login?error=missing');
-  const user = USERS.find(u => u.username.toLowerCase() === username.toLowerCase().trim());
-  if (!user || !safeCompare(password, user.password)) {
-    console.log(`[Auth] Failed: "${username}"`);
+
+  const users = getUsers();
+  const user = users.find(u => u.username.toLowerCase() === username.toLowerCase().trim());
+  if (!user) {
+    console.log(`[Auth] Failed: "${username}" (no such user)`);
     return res.redirect('/login?error=invalid');
   }
+
+  const realPassword = getPasswordFor(user.username);
+  if (!realPassword || !safeCompare(password, realPassword)) {
+    console.log(`[Auth] Failed: "${username}" (bad password)`);
+    return res.redirect('/login?error=invalid');
+  }
+
   req.session.userId      = user.id;
   req.session.username    = user.username;
-  req.session.displayName = user.displayName;
+  req.session.displayName = user.name;
   req.session.role        = user.role;
-  console.log(`[Auth] ✅ Login: ${user.username}`);
+  console.log(`[Auth] ✅ Login: ${user.username} (${user.role})`);
   res.redirect('/');
 });
 
@@ -129,26 +205,14 @@ function httpsPost(hostname, path, body) {
 }
 
 // ── CANDLE CACHE (5-minute TTL) ───────────────────────────────────────────────
-// Twelve Data free tier: 800 req/day, 8 req/min.
-// We cache per-symbol for 5 minutes so repeated dashboard refreshes don't burn quota.
-const candleCache = {};  // { [symbol]: { ts: Date.now(), candles: [...] } }
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const candleCache = {};
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
 // ── LIVE CANDLE FETCH — TWELVE DATA ──────────────────────────────────────────
-//
-//  Twelve Data symbol mapping:
-//    EUR/USD  → "EUR/USD"   (forex)
-//    GBP/USD  → "GBP/USD"   (forex)
-//    USD/JPY  → "USD/JPY"   (forex)
-//    XAU/USD  → "XAU/USD"   (forex commodity)
-//
-//  We request 5-minute candles, 60 bars (enough for RSI-14, MACD-26, BB-20).
-//
 async function fetchTwelveDataCandles(symbol) {
   const key = process.env.TWELVEDATA_KEY;
   if (!key) throw new Error('TWELVEDATA_KEY environment variable not set');
 
-  // Check cache first
   const cached = candleCache[symbol];
   if (cached && (Date.now() - cached.ts) < CACHE_TTL_MS) {
     console.log(`[TwelveData] Cache hit for ${symbol}`);
@@ -165,7 +229,6 @@ async function fetchTwelveDataCandles(symbol) {
     throw new Error(`Twelve Data error for ${symbol}: ${msg}`);
   }
 
-  // Twelve Data returns newest-first — reverse to oldest-first for indicator math
   const candles = data.values
     .reverse()
     .map(v => ({
@@ -176,7 +239,6 @@ async function fetchTwelveDataCandles(symbol) {
       t: v.datetime
     }));
 
-  // Store in cache
   candleCache[symbol] = { ts: Date.now(), candles };
   console.log(`[TwelveData] ✅ ${symbol}: ${candles.length} candles, latest close: ${candles[candles.length-1].c}`);
 
@@ -184,8 +246,6 @@ async function fetchTwelveDataCandles(symbol) {
 }
 
 // ── /api/candles ENDPOINT ─────────────────────────────────────────────────────
-// Frontend calls: GET /api/candles?symbol=EUR/USD
-//
 const ALLOWED_SYMBOLS = new Set(['EUR/USD', 'GBP/USD', 'USD/JPY', 'XAU/USD']);
 
 app.get('/api/candles', requireAuth, async (req, res) => {
@@ -247,6 +307,9 @@ app.post('/api/ai', requireAuth, (req, res) => {
 });
 
 // ── EMAIL PROXY (EmailJS) ─────────────────────────────────────────────────────
+// NOTE: email sending itself is still triggered by the frontend's confidence
+// check against EMAIL_ALERT_THRESHOLD (loaded from /api/settings). This route
+// just relays the already-decided alert to EmailJS — no threshold logic here.
 app.post('/api/send-email', requireAuth, async (req, res) => {
   const { pair, signal, confidence, score, istTime, message } = req.body;
   const EJS_SID    = process.env.EJS_SID    || '';
@@ -292,6 +355,139 @@ app.get('/api/config', requireAuth, (req, res) => {
   });
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  ADMIN MANAGEMENT ROUTES
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── SETTINGS (thresholds) ── read: any logged-in user · write: admin only
+app.get('/api/settings', requireAuth, (req, res) => {
+  res.json(getSettings());
+});
+
+app.post('/api/settings', requireAuth, requireAdmin, (req, res) => {
+  const { signalStorageThreshold, emailAlertThreshold } = req.body;
+  const validValues = [80, 85, 90, 95];
+  const current = getSettings();
+  const next = { ...current };
+
+  if (signalStorageThreshold !== undefined) {
+    if (!validValues.includes(Number(signalStorageThreshold))) {
+      return res.status(400).json({ error: 'signalStorageThreshold must be one of 80, 85, 90, 95' });
+    }
+    if (Number(signalStorageThreshold) !== current.signalStorageThreshold) {
+      appendAudit({ type: 'threshold_change', actor: req.session.username,
+        detail: `Signal Storage Threshold changed from ${current.signalStorageThreshold}% to ${signalStorageThreshold}%` });
+    }
+    next.signalStorageThreshold = Number(signalStorageThreshold);
+  }
+
+  if (emailAlertThreshold !== undefined) {
+    if (!validValues.includes(Number(emailAlertThreshold))) {
+      return res.status(400).json({ error: 'emailAlertThreshold must be one of 80, 85, 90, 95' });
+    }
+    if (Number(emailAlertThreshold) !== current.emailAlertThreshold) {
+      appendAudit({ type: 'threshold_change', actor: req.session.username,
+        detail: `Email Alert Threshold changed from ${current.emailAlertThreshold}% to ${emailAlertThreshold}%` });
+    }
+    next.emailAlertThreshold = Number(emailAlertThreshold);
+  }
+
+  next.updatedAt = new Date().toISOString();
+  next.updatedBy = req.session.username;
+  if (!setSettings(next)) return res.status(500).json({ error: 'Failed to save settings' });
+  res.json(next);
+});
+
+// ── USER MANAGEMENT — admin only ──────────────────────────────────────────
+app.get('/api/users', requireAuth, requireAdmin, (req, res) => {
+  const users = getUsers().map(u => ({
+    id: u.id, username: u.username, name: u.name, email: u.email,
+    role: u.role, createdAt: u.createdAt, createdBy: u.createdBy
+  }));
+  res.json(users);
+});
+
+app.post('/api/users', requireAuth, requireAdmin, (req, res) => {
+  const { username, name, email, role } = req.body;
+  if (!username || !name || !role) return res.status(400).json({ error: 'username, name, and role are required' });
+  if (!isValidRole(role)) return res.status(400).json({ error: 'role must be one of: admin, write, read' });
+
+  const users = getUsers();
+  const cleanUsername = String(username).trim().toLowerCase();
+  if (users.some(u => u.username.toLowerCase() === cleanUsername)) {
+    return res.status(409).json({ error: 'Username already exists' });
+  }
+
+  const newId = users.length ? Math.max(...users.map(u => u.id)) + 1 : 1;
+  const newUser = {
+    id: newId, username: cleanUsername, name: String(name).trim(),
+    email: email ? String(email).trim() : '', role,
+    createdAt: new Date().toISOString(), createdBy: req.session.username
+  };
+
+  users.push(newUser);
+  if (!setUsers(users)) return res.status(500).json({ error: 'Failed to save user' });
+
+  appendAudit({ type: 'user_created', actor: req.session.username,
+    detail: `Created user "${newUser.username}" (${newUser.name}) with role "${newUser.role}"` });
+
+  res.status(201).json({
+    user: newUser,
+    note: `User created. Set environment variable PASS_${newUser.username.toUpperCase()} on the server with their password before they can log in.`
+  });
+});
+
+app.patch('/api/users/:id/role', requireAuth, requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  const { role } = req.body;
+  if (!isValidRole(role)) return res.status(400).json({ error: 'role must be one of: admin, write, read' });
+
+  const users = getUsers();
+  const u = users.find(x => x.id === id);
+  if (!u) return res.status(404).json({ error: 'User not found' });
+  if (u.role === role) return res.json({ user: u, changed: false });
+
+  const oldRole = u.role;
+  u.role = role;
+  if (!setUsers(users)) return res.status(500).json({ error: 'Failed to save user' });
+
+  appendAudit({ type: 'role_change', actor: req.session.username,
+    detail: `Changed role of "${u.username}" from "${oldRole}" to "${role}"` });
+
+  res.json({ user: u, changed: true });
+});
+
+app.delete('/api/users/:id', requireAuth, requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  const users = getUsers();
+  const u = users.find(x => x.id === id);
+  if (!u) return res.status(404).json({ error: 'User not found' });
+  if (u.username === req.session.username) {
+    return res.status(400).json({ error: 'You cannot delete your own account while logged in as it' });
+  }
+
+  const remaining = users.filter(x => x.id !== id);
+  if (!setUsers(remaining)) return res.status(500).json({ error: 'Failed to save users' });
+
+  appendAudit({ type: 'user_deleted', actor: req.session.username,
+    detail: `Deleted user "${u.username}" (${u.name}, role: ${u.role})` });
+
+  res.json({ deleted: true, id });
+});
+
+// ── AUDIT LOG — admin only ─────────────────────────────────────────────────
+app.get('/api/audit-log', requireAuth, requireAdmin, (req, res) => {
+  res.json(getAudit());
+});
+
+app.delete('/api/audit-log', requireAuth, requireAdmin, (req, res) => {
+  const countBefore = getAudit().length;
+  writeJSON(AUDIT_FILE, []);
+  appendAudit({ type: 'log_deletion', actor: req.session.username,
+    detail: `Cleared audit log (${countBefore} entries removed)` });
+  res.json({ cleared: true, countBefore });
+});
+
 // ── HEALTH ────────────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {
   res.json({
@@ -308,15 +504,7 @@ app.get('/', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'dhitta-trading-signals.html'));
 });
 
-app.get('*', requireAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'dhitta-trading-signals.html'));
-});
+app.use('/', requireAuth, express.static(path.join(__dirname, 'public')));
 
-// ── START ─────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`\n✅ Dhitta Trading Signals running on port ${PORT}`);
-  console.log(`🔐 Users: ${USERS.map(u => u.username).join(', ')}`);
-  console.log(`📈 Twelve Data: ${process.env.TWELVEDATA_KEY ? '✅ Key set' : '❌ Missing — add TWELVEDATA_KEY env var'}`);
-  console.log(`🤖 Gemini:      ${process.env.GEMINI_KEY    ? '✅' : '❌ Optional — add GEMINI_KEY'}`);
-  console.log(`📧 Email:       ${process.env.EJS_SID        ? '✅' : '❌ Optional — add EJS_SID/TID/PUB/EMAIL_ADDR'}\n`);
-});
+app.get('*', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'p
