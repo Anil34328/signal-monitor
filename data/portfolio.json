@@ -1,0 +1,9 @@
+{
+  "startingBalance": 50000,
+  "currentBalance": 50000,
+  "riskPerTradePercent": 1,
+  "tradeStorageThreshold": 80,
+  "createdAt": "2024-06-12T00:00:00.000Z",
+  "updatedAt": "2024-06-12T00:00:00.000Z",
+  "updatedBy": "system"
+}
